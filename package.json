@@ -1,0 +1,17 @@
+{
+  "name": "nclex-hub",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently --kill-others --names backend,frontend \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "start": "npm run build && npm --prefix backend start",
+    "build": "npm --prefix frontend run build",
+    "install:all": "npm install --prefix frontend && npm install --prefix backend",
+    "lint": "npm --prefix frontend run lint",
+    "setup": "npm --prefix backend run setup",
+    "seed": "npm --prefix backend run seed"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}

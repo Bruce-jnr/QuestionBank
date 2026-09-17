@@ -1,0 +1,458 @@
+<!doctype html>
+
+<html class="dark" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Admin Dashboard - Manage Posts</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;900&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: '#2b8cee',
+              'background-light': '#f6f7f8',
+              'background-dark': '#101922',
+            },
+            fontFamily: {
+              display: ['Lexend', 'sans-serif'],
+            },
+            borderRadius: {
+              DEFAULT: '0.25rem',
+              lg: '0.5rem',
+              xl: '0.75rem',
+              full: '9999px',
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24;
+      }
+    </style>
+  </head>
+  <body
+    class="font-display bg-background-light dark:bg-background-dark text-[#111418] dark:text-white/90"
+  >
+    <div class="relative flex min-h-screen">
+      <!-- SideNavBar -->
+      <aside
+        class="sticky top-0 h-screen w-64 flex-shrink-0 bg-white dark:bg-background-dark dark:border-r dark:border-white/10 shadow-sm"
+      >
+        <div class="flex h-full flex-col justify-between p-4">
+          <div class="flex flex-col gap-6">
+            <div class="flex items-center gap-3 px-3">
+              <div
+                class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
+                data-alt="NCLEX Prep logo with a simple abstract design"
+                style="
+                  background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDh1YI6jnK7Oj8_Da0AWHiEhUW0Wn_3ybV_XawZwLB1bl6R-PNr5UbtEIckve1BwhfJnzwj9Cj_MXyUPs25Lv5f7XzqsRmNvc8yMMoFGpoj9S5c9G48HixD2jl-n7F_tvwAwLkmLRJxbnkPJxzEs_TKptdJLVPvdFU5tDWFW_HbvZTNRPQaZHiIc3F2JtfZSbXSLLnGkOQOmBGS3ZsLZPhNl2yzFpu0dUnBOX_pNIMQH_lIMVOpc9fbs05kTqcIK-uiAr7aHaQcSIQ');
+                "
+              ></div>
+              <div class="flex flex-col">
+                <h1
+                  class="text-[#111418] dark:text-white text-base font-bold leading-normal"
+                >
+                  NCLEX Prep
+                </h1>
+                <p
+                  class="text-[#617589] dark:text-white/60 text-sm font-normal leading-normal"
+                >
+                  Admin Panel
+                </p>
+              </div>
+            </div>
+            <nav class="flex flex-col gap-2">
+              <a
+                class="flex items-center gap-3 px-3 py-2 text-[#617589] dark:text-white/60 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                href="#"
+              >
+                <span class="material-symbols-outlined">dashboard</span>
+                <p class="text-sm font-medium leading-normal">Dashboard</p>
+              </a>
+              <a
+                class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary"
+                href="#"
+              >
+                <span class="material-symbols-outlined">article</span>
+                <p class="text-sm font-medium leading-normal">Posts</p>
+              </a>
+              <a
+                class="flex items-center gap-3 px-3 py-2 text-[#617589] dark:text-white/60 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                href="#"
+              >
+                <span class="material-symbols-outlined">sell</span>
+                <p class="text-sm font-medium leading-normal">Categories</p>
+              </a>
+              <a
+                class="flex items-center gap-3 px-3 py-2 text-[#617589] dark:text-white/60 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                href="#"
+              >
+                <span class="material-symbols-outlined">group</span>
+                <p class="text-sm font-medium leading-normal">Users</p>
+              </a>
+              <a
+                class="flex items-center gap-3 px-3 py-2 text-[#617589] dark:text-white/60 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                href="#"
+              >
+                <span class="material-symbols-outlined">settings</span>
+                <p class="text-sm font-medium leading-normal">Settings</p>
+              </a>
+            </nav>
+          </div>
+          <div
+            class="flex flex-col gap-1 border-t border-gray-200 dark:border-white/10 pt-4"
+          >
+            <a
+              class="flex items-center gap-3 px-3 py-2 text-[#617589] dark:text-white/60 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+              href="#"
+            >
+              <span class="material-symbols-outlined">account_circle</span>
+              <p class="text-sm font-medium leading-normal">Admin User</p>
+            </a>
+            <a
+              class="flex items-center gap-3 px-3 py-2 text-[#617589] dark:text-white/60 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+              href="#"
+            >
+              <span class="material-symbols-outlined">logout</span>
+              <p class="text-sm font-medium leading-normal">Logout</p>
+            </a>
+          </div>
+        </div>
+      </aside>
+      <!-- Main Content -->
+      <main class="flex-1 p-6 lg:p-10">
+        <div class="w-full max-w-7xl mx-auto">
+          <!-- PageHeading -->
+          <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+            <h1
+              class="text-[#111418] dark:text-white text-3xl font-black leading-tight tracking-[-0.033em]"
+            >
+              Manage Posts
+            </h1>
+            <button
+              class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-5 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors shadow-sm"
+            >
+              <span class="material-symbols-outlined mr-2 text-base">add</span>
+              <span class="truncate">Add New Post</span>
+            </button>
+          </div>
+          <div
+            class="bg-white dark:bg-background-dark rounded-xl shadow-sm p-4"
+          >
+            <!-- SearchBar -->
+            <div class="px-4 py-3">
+              <label class="flex flex-col min-w-40 h-12 w-full">
+                <div class="flex w-full flex-1 items-stretch rounded-lg h-full">
+                  <div
+                    class="text-[#617589] dark:text-white/60 flex bg-[#f0f2f4] dark:bg-white/5 items-center justify-center pl-4 rounded-l-lg"
+                  >
+                    <span class="material-symbols-outlined">search</span>
+                  </div>
+                  <input
+                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-lg text-[#111418] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border-none bg-[#f0f2f4] dark:bg-white/5 h-full placeholder:text-[#617589] dark:placeholder:text-white/40 pl-2 text-base font-normal leading-normal"
+                    placeholder="Search posts by title or author..."
+                    value=""
+                  />
+                </div>
+              </label>
+            </div>
+            <!-- Table -->
+            <div class="px-4 py-3 @container">
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead>
+                    <tr
+                      class="border-b border-b-[#dbe0e6] dark:border-b-white/10"
+                    >
+                      <th
+                        class="px-4 py-3 text-left text-[#617589] dark:text-white/60 w-2/5 text-sm font-medium leading-normal"
+                      >
+                        Title
+                      </th>
+                      <th
+                        class="px-4 py-3 text-left text-[#617589] dark:text-white/60 w-1/5 text-sm font-medium leading-normal"
+                      >
+                        Author
+                      </th>
+                      <th
+                        class="px-4 py-3 text-left text-[#617589] dark:text-white/60 w-1/5 text-sm font-medium leading-normal"
+                      >
+                        Date Published
+                      </th>
+                      <th
+                        class="px-4 py-3 text-left text-[#617589] dark:text-white/60 w-1/5 text-sm font-medium leading-normal"
+                      >
+                        Status
+                      </th>
+                      <th
+                        class="px-4 py-3 text-right text-[#617589] dark:text-white/60 w-auto text-sm font-medium leading-normal"
+                      >
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      class="border-t border-t-[#dbe0e6] dark:border-t-white/10 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                    >
+                      <td
+                        class="h-[72px] px-4 py-2 w-2/5 text-[#111418] dark:text-white/90 text-sm font-medium leading-normal"
+                      >
+                        Mastering Cardiac Nursing Questions
+                      </td>
+                      <td
+                        class="h-[72px] px-4 py-2 w-1/5 text-[#617589] dark:text-white/60 text-sm font-normal leading-normal"
+                      >
+                        Jane Doe
+                      </td>
+                      <td
+                        class="h-[72px] px-4 py-2 w-1/5 text-[#617589] dark:text-white/60 text-sm font-normal leading-normal"
+                      >
+                        Oct 26, 2023
+                      </td>
+                      <td
+                        class="h-[72px] px-4 py-2 w-1/5 text-sm font-normal leading-normal"
+                      >
+                        <span
+                          class="inline-flex items-center justify-center rounded-full h-7 px-3 bg-green-100 dark:bg-green-500/20 text-green-800 dark:text-green-300 text-xs font-medium"
+                          >Published</span
+                        >
+                      </td>
+                      <td class="h-[72px] px-4 py-2 w-auto text-right">
+                        <div class="flex justify-end items-center gap-2">
+                          <button
+                            class="flex size-8 items-center justify-center rounded-lg hover:bg-primary/10 text-[#617589] dark:text-white/60 hover:text-primary transition-colors"
+                          >
+                            <span class="material-symbols-outlined text-xl"
+                              >edit</span
+                            >
+                          </button>
+                          <button
+                            class="flex size-8 items-center justify-center rounded-lg hover:bg-red-500/10 text-[#617589] dark:text-white/60 hover:text-red-500 transition-colors"
+                          >
+                            <span class="material-symbols-outlined text-xl"
+                              >delete</span
+                            >
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr
+                      class="border-t border-t-[#dbe0e6] dark:border-t-white/10 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                    >
+                      <td
+                        class="h-[72px] px-4 py-2 w-2/5 text-[#111418] dark:text-white/90 text-sm font-medium leading-normal"
+                      >
+                        A Guide to Pediatric Dosages
+                      </td>
+                      <td
+                        class="h-[72px] px-4 py-2 w-1/5 text-[#617589] dark:text-white/60 text-sm font-normal leading-normal"
+                      >
+                        John Smith
+                      </td>
+                      <td
+                        class="h-[72px] px-4 py-2 w-1/5 text-[#617589] dark:text-white/60 text-sm font-normal leading-normal"
+                      >
+                        Oct 24, 2023
+                      </td>
+                      <td
+                        class="h-[72px] px-4 py-2 w-1/5 text-sm font-normal leading-normal"
+                      >
+                        <span
+                          class="inline-flex items-center justify-center rounded-full h-7 px-3 bg-green-100 dark:bg-green-500/20 text-green-800 dark:text-green-300 text-xs font-medium"
+                          >Published</span
+                        >
+                      </td>
+                      <td class="h-[72px] px-4 py-2 w-auto text-right">
+                        <div class="flex justify-end items-center gap-2">
+                          <button
+                            class="flex size-8 items-center justify-center rounded-lg hover:bg-primary/10 text-[#617589] dark:text-white/60 hover:text-primary transition-colors"
+                          >
+                            <span class="material-symbols-outlined text-xl"
+                              >edit</span
+                            >
+                          </button>
+                          <button
+                            class="flex size-8 items-center justify-center rounded-lg hover:bg-red-500/10 text-[#617589] dark:text-white/60 hover:text-red-500 transition-colors"
+                          >
+                            <span class="material-symbols-outlined text-xl"
+                              >delete</span
+                            >
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr
+                      class="border-t border-t-[#dbe0e6] dark:border-t-white/10 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                    >
+                      <td
+                        class="h-[72px] px-4 py-2 w-2/5 text-[#111418] dark:text-white/90 text-sm font-medium leading-normal"
+                      >
+                        Pharmacology Flashcards: The Ultimate Study Aid
+                      </td>
+                      <td
+                        class="h-[72px] px-4 py-2 w-1/5 text-[#617589] dark:text-white/60 text-sm font-normal leading-normal"
+                      >
+                        Jane Doe
+                      </td>
+                      <td
+                        class="h-[72px] px-4 py-2 w-1/5 text-[#617589] dark:text-white/60 text-sm font-normal leading-normal"
+                      >
+                        Oct 22, 2023
+                      </td>
+                      <td
+                        class="h-[72px] px-4 py-2 w-1/5 text-sm font-normal leading-normal"
+                      >
+                        <span
+                          class="inline-flex items-center justify-center rounded-full h-7 px-3 bg-yellow-100 dark:bg-yellow-500/20 text-yellow-800 dark:text-yellow-300 text-xs font-medium"
+                          >Draft</span
+                        >
+                      </td>
+                      <td class="h-[72px] px-4 py-2 w-auto text-right">
+                        <div class="flex justify-end items-center gap-2">
+                          <button
+                            class="flex size-8 items-center justify-center rounded-lg hover:bg-primary/10 text-[#617589] dark:text-white/60 hover:text-primary transition-colors"
+                          >
+                            <span class="material-symbols-outlined text-xl"
+                              >edit</span
+                            >
+                          </button>
+                          <button
+                            class="flex size-8 items-center justify-center rounded-lg hover:bg-red-500/10 text-[#617589] dark:text-white/60 hover:text-red-500 transition-colors"
+                          >
+                            <span class="material-symbols-outlined text-xl"
+                              >delete</span
+                            >
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr
+                      class="border-t border-t-[#dbe0e6] dark:border-t-white/10 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                    >
+                      <td
+                        class="h-[72px] px-4 py-2 w-2/5 text-[#111418] dark:text-white/90 text-sm font-medium leading-normal"
+                      >
+                        Top 5 Mistakes to Avoid in the NCLEX
+                      </td>
+                      <td
+                        class="h-[72px] px-4 py-2 w-1/5 text-[#617589] dark:text-white/60 text-sm font-normal leading-normal"
+                      >
+                        Emily White
+                      </td>
+                      <td
+                        class="h-[72px] px-4 py-2 w-1/5 text-[#617589] dark:text-white/60 text-sm font-normal leading-normal"
+                      >
+                        Oct 20, 2023
+                      </td>
+                      <td
+                        class="h-[72px] px-4 py-2 w-1/5 text-sm font-normal leading-normal"
+                      >
+                        <span
+                          class="inline-flex items-center justify-center rounded-full h-7 px-3 bg-green-100 dark:bg-green-500/20 text-green-800 dark:text-green-300 text-xs font-medium"
+                          >Published</span
+                        >
+                      </td>
+                      <td class="h-[72px] px-4 py-2 w-auto text-right">
+                        <div class="flex justify-end items-center gap-2">
+                          <button
+                            class="flex size-8 items-center justify-center rounded-lg hover:bg-primary/10 text-[#617589] dark:text-white/60 hover:text-primary transition-colors"
+                          >
+                            <span class="material-symbols-outlined text-xl"
+                              >edit</span
+                            >
+                          </button>
+                          <button
+                            class="flex size-8 items-center justify-center rounded-lg hover:bg-red-500/10 text-[#617589] dark:text-white/60 hover:text-red-500 transition-colors"
+                          >
+                            <span class="material-symbols-outlined text-xl"
+                              >delete</span
+                            >
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <!-- Pagination -->
+            <div
+              class="flex items-center justify-center p-4 border-t border-gray-200 dark:border-white/10"
+            >
+              <nav class="flex items-center gap-1">
+                <a
+                  class="flex size-9 items-center justify-center rounded-lg hover:bg-primary/10 text-[#617589] dark:text-white/60 hover:text-primary transition-colors"
+                  href="#"
+                >
+                  <span class="material-symbols-outlined text-xl"
+                    >chevron_left</span
+                  >
+                </a>
+                <a
+                  class="text-sm font-bold flex size-9 items-center justify-center text-white rounded-lg bg-primary"
+                  href="#"
+                  >1</a
+                >
+                <a
+                  class="text-sm font-normal flex size-9 items-center justify-center text-[#111418] dark:text-white/90 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
+                  href="#"
+                  >2</a
+                >
+                <a
+                  class="text-sm font-normal flex size-9 items-center justify-center text-[#111418] dark:text-white/90 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
+                  href="#"
+                  >3</a
+                >
+                <span
+                  class="text-sm font-normal flex size-9 items-center justify-center text-[#617589] dark:text-white/60"
+                  >...</span
+                >
+                <a
+                  class="text-sm font-normal flex size-9 items-center justify-center text-[#111418] dark:text-white/90 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
+                  href="#"
+                  >8</a
+                >
+                <a
+                  class="text-sm font-normal flex size-9 items-center justify-center text-[#111418] dark:text-white/90 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
+                  href="#"
+                  >9</a
+                >
+                <a
+                  class="text-sm font-normal flex size-9 items-center justify-center text-[#111418] dark:text-white/90 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
+                  href="#"
+                  >10</a
+                >
+                <a
+                  class="flex size-9 items-center justify-center rounded-lg hover:bg-primary/10 text-[#617589] dark:text-white/60 hover:text-primary transition-colors"
+                  href="#"
+                >
+                  <span class="material-symbols-outlined text-xl"
+                    >chevron_right</span
+                  >
+                </a>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
