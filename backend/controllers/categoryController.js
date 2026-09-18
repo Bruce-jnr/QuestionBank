@@ -1,10 +1,9 @@
-const pool = require('../src/config/database');
+const prisma = require('../src/config/database');
 const Category = require('../models/Category');
 const { verifyToken } = require('../src/config/auth');
 function sendJSON(res, statusCode, data) {
   res.writeHead(statusCode, {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*'
+    'Content-Type': 'application/json'
   });
   res.end(JSON.stringify(data));
 }
@@ -26,15 +25,22 @@ function parseBody(req) {
 }
 async function getCategories(req, res) {
   try {
-    const [categories] = await pool.execute(
-      `SELECT DISTINCT 
-        p.category as name,
-        COUNT(p.id) as post_count
-      FROM posts p
-      WHERE p.status = 'published' AND p.category IS NOT NULL AND p.category != ''
-      GROUP BY p.category
-      ORDER BY p.category ASC`
-    );
+    const groups = await prisma.post.groupBy({
+      by: ['category'],
+      where: {
+        status: 'published',
+        AND: [
+          { category: { not: null } },
+          { category: { not: '' } }
+        ]
+      },
+      _count: { id: true },
+      orderBy: { category: 'asc' }
+    });
+    const categories = groups.map((group) => ({
+      name: group.category,
+      post_count: group._count.id
+    }));
 
     sendJSON(res, 200, { categories });
   } catch (error) {
@@ -52,7 +58,7 @@ async function getAllCategories(req, res) {
     }
 
     const decoded = verifyToken(token);
-    if (!decoded) {
+    if (!decoded || (decoded.role && decoded.role !== 'admin')) {
       return sendJSON(res, 403, { error: 'Invalid or expired token' });
     }
 
@@ -73,7 +79,7 @@ async function getCategory(req, res) {
     }
 
     const decoded = verifyToken(token);
-    if (!decoded) {
+    if (!decoded || (decoded.role && decoded.role !== 'admin')) {
       return sendJSON(res, 403, { error: 'Invalid or expired token' });
     }
 
@@ -106,7 +112,7 @@ async function createCategory(req, res) {
     }
 
     const decoded = verifyToken(token);
-    if (!decoded) {
+    if (!decoded || (decoded.role && decoded.role !== 'admin')) {
       return sendJSON(res, 403, { error: 'Invalid or expired token' });
     }
 
@@ -127,7 +133,7 @@ async function createCategory(req, res) {
     sendJSON(res, 201, { category, message: 'Category created successfully' });
   } catch (error) {
     console.error('Error creating category:', error);
-    if (error.code === 'ER_DUP_ENTRY') {
+    if (error.code === 'P2002') {
       return sendJSON(res, 400, { error: 'Category with this name or slug already exists' });
     }
     sendJSON(res, 500, { error: 'Internal server error' });
@@ -143,7 +149,7 @@ async function updateCategory(req, res) {
     }
 
     const decoded = verifyToken(token);
-    if (!decoded) {
+    if (!decoded || (decoded.role && decoded.role !== 'admin')) {
       return sendJSON(res, 403, { error: 'Invalid or expired token' });
     }
 
@@ -166,7 +172,7 @@ async function updateCategory(req, res) {
     sendJSON(res, 200, { category, message: 'Category updated successfully' });
   } catch (error) {
     console.error('Error updating category:', error);
-    if (error.code === 'ER_DUP_ENTRY') {
+    if (error.code === 'P2002') {
       return sendJSON(res, 400, { error: 'Category with this name or slug already exists' });
     }
     sendJSON(res, 500, { error: 'Internal server error' });

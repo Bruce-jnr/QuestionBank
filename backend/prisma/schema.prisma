@@ -1,0 +1,238 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PostStatus {
+  draft
+  published
+}
+
+enum CommentStatus {
+  pending
+  approved
+  rejected
+}
+
+enum StudentStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum QuestionStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  MULTIPLE_RESPONSE
+  MATRIX_GRID
+  CLOZE_DROP_DOWN
+  RATIONALE_PAIRED
+  BOW_TIE
+}
+
+enum ScoringMethod {
+  ZERO_ONE
+  PLUS_MINUS
+  RATIONALE
+}
+
+enum ClientNeedCategory {
+  MANAGEMENT_OF_CARE
+  SAFETY_AND_INFECTION_CONTROL
+  HEALTH_PROMOTION_AND_MAINTENANCE
+  PSYCHOSOCIAL_INTEGRITY
+  BASIC_CARE_AND_COMFORT
+  PHARMACOLOGICAL_AND_PARENTERAL_THERAPIES
+  REDUCTION_OF_RISK_POTENTIAL
+  PHYSIOLOGICAL_ADAPTATION
+}
+
+enum ExamMode {
+  PRACTICE
+  TEST
+}
+
+model Admin {
+  id         Int        @id @default(autoincrement())
+  username   String     @unique @db.VarChar(255)
+  password   String     @db.VarChar(255)
+  email      String?    @db.VarChar(255)
+  created_at DateTime   @default(now()) @db.Timestamp(6)
+  updated_at DateTime   @updatedAt @db.Timestamp(6)
+  posts      Post[]
+  students   Student[]  @relation("StudentCreator")
+  questions  Question[] @relation("QuestionCreator")
+
+  @@map("admins")
+}
+
+model Student {
+  id                   String        @id @default(uuid()) @db.Uuid
+  full_name            String        @db.VarChar(255)
+  email                String        @unique @db.VarChar(255)
+  password             String        @db.VarChar(255)
+  status               StudentStatus @default(ACTIVE)
+  must_change_password Boolean       @default(true)
+  created_by           Int?
+  created_at           DateTime      @default(now()) @db.Timestamp(6)
+  updated_at           DateTime      @updatedAt @db.Timestamp(6)
+  creator              Admin?        @relation("StudentCreator", fields: [created_by], references: [id], onDelete: SetNull)
+  exam_sessions        ExamSession[]
+  answers              UserAnswer[]
+
+  @@index([status])
+  @@map("students")
+}
+
+model Question {
+  id                String                @id @default(uuid()) @db.Uuid
+  external_id       String?               @unique @db.VarChar(100)
+  stem              String                @db.Text
+  prompt            String                @db.Text
+  options           Json
+  correct_answers   Json
+  rationale         String                @db.Text
+  client_need       ClientNeedCategory
+  question_type     QuestionType
+  scoring_method    ScoringMethod
+  difficulty        Float                 @default(0.5)
+  status            QuestionStatus        @default(DRAFT)
+  created_by        Int?
+  created_at        DateTime              @default(now()) @db.Timestamp(6)
+  updated_at        DateTime              @updatedAt @db.Timestamp(6)
+  creator           Admin?                @relation("QuestionCreator", fields: [created_by], references: [id], onDelete: SetNull)
+  session_questions ExamSessionQuestion[]
+  answers           UserAnswer[]
+
+  @@index([client_need, question_type, status])
+  @@map("questions")
+}
+
+model ExamSession {
+  id                String                @id @default(uuid()) @db.Uuid
+  student_id        String                @db.Uuid
+  mode              ExamMode
+  client_need       ClientNeedCategory?
+  is_completed      Boolean               @default(false)
+  score             Float?
+  max_score         Float?
+  time_spent_sec    Int                   @default(0)
+  question_count    Int
+  created_at        DateTime              @default(now()) @db.Timestamp(6)
+  completed_at      DateTime?             @db.Timestamp(6)
+  student           Student               @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  session_questions ExamSessionQuestion[]
+  answers           UserAnswer[]
+
+  @@index([student_id, is_completed])
+  @@map("exam_sessions")
+}
+
+model ExamSessionQuestion {
+  id              String      @id @default(uuid()) @db.Uuid
+  exam_session_id String      @db.Uuid
+  question_id     String      @db.Uuid
+  position        Int
+  exam_session    ExamSession @relation(fields: [exam_session_id], references: [id], onDelete: Cascade)
+  question        Question    @relation(fields: [question_id], references: [id], onDelete: Restrict)
+
+  @@unique([exam_session_id, question_id])
+  @@unique([exam_session_id, position])
+  @@map("exam_session_questions")
+}
+
+model UserAnswer {
+  id              String      @id @default(uuid()) @db.Uuid
+  student_id      String      @db.Uuid
+  exam_session_id String      @db.Uuid
+  question_id     String      @db.Uuid
+  selected        Json
+  is_correct      Boolean
+  points_earned   Float
+  points_possible Float
+  time_spent_sec  Int         @default(0)
+  created_at      DateTime    @default(now()) @db.Timestamp(6)
+  updated_at      DateTime    @updatedAt @db.Timestamp(6)
+  student         Student     @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  exam_session    ExamSession @relation(fields: [exam_session_id], references: [id], onDelete: Cascade)
+  question        Question    @relation(fields: [question_id], references: [id], onDelete: Restrict)
+
+  @@unique([exam_session_id, question_id])
+  @@index([student_id, question_id])
+  @@map("user_answers")
+}
+
+model Post {
+  id             Int        @id @default(autoincrement())
+  title          String     @db.VarChar(500)
+  slug           String?    @unique @db.VarChar(500)
+  content        String?    @db.Text
+  excerpt        String?    @db.Text
+  category       String?    @db.VarChar(100)
+  author_id      Int?
+  featured_image String?    @db.VarChar(500)
+  status         PostStatus @default(draft)
+  featured       Boolean    @default(false)
+  published_at   DateTime?  @db.Timestamp(6)
+  created_at     DateTime   @default(now()) @db.Timestamp(6)
+  updated_at     DateTime   @updatedAt @db.Timestamp(6)
+  author         Admin?     @relation(fields: [author_id], references: [id], onDelete: SetNull)
+  comments       Comment[]
+
+  @@index([status])
+  @@index([category])
+  @@index([published_at])
+  @@map("posts")
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(100)
+  slug        String?  @unique @db.VarChar(100)
+  description String?  @db.Text
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+
+  @@map("categories")
+}
+
+model Comment {
+  id           Int           @id @default(autoincrement())
+  post_id      Int
+  parent_id    Int?
+  author_name  String        @db.VarChar(255)
+  author_email String?       @db.VarChar(255)
+  content      String        @db.Text
+  upvotes      Int           @default(0)
+  status       CommentStatus @default(pending)
+  created_at   DateTime      @default(now()) @db.Timestamp(6)
+  updated_at   DateTime      @updatedAt @db.Timestamp(6)
+  post         Post          @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  parent       Comment?      @relation("CommentReplies", fields: [parent_id], references: [id], onDelete: Cascade)
+  replies      Comment[]     @relation("CommentReplies")
+
+  @@index([post_id])
+  @@index([status])
+  @@index([parent_id])
+  @@map("comments")
+}
+
+model Setting {
+  id            Int      @id @default(autoincrement())
+  setting_key   String   @unique @db.VarChar(255)
+  setting_value String?  @db.Text
+  setting_type  String   @default("string") @db.VarChar(50)
+  description   String?  @db.Text
+  created_at    DateTime @default(now()) @db.Timestamp(6)
+  updated_at    DateTime @updatedAt @db.Timestamp(6)
+
+  @@map("settings")
+}

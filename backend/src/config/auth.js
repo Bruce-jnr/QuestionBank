@@ -3,9 +3,17 @@ const bcrypt = require('bcryptjs');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
 const JWT_EXPIRES_IN = '24h';
-function generateToken(userId, username) {
+function generateToken(userId, username, role = 'admin') {
   return jwt.sign(
-    { userId, username },
+    { userId, username, role },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
+}
+
+function generateStudentToken(studentId, email) {
+  return jwt.sign(
+    { userId: studentId, email, role: 'student' },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN }
   );
@@ -27,6 +35,7 @@ async function comparePassword(password, hash) {
 
 module.exports = {
   generateToken,
+  generateStudentToken,
   verifyToken,
   hashPassword,
   comparePassword

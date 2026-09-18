@@ -1,92 +1,69 @@
-const pool = require('../src/config/database');
+const prisma = require('../src/config/database');
+
+function convertValue(setting) {
+  let value = setting.setting_value;
+  if (setting.setting_type === 'boolean') {
+    value = value === 'true' || value === '1';
+  } else if (setting.setting_type === 'number') {
+    value = parseInt(value, 10);
+  }
+  return value;
+}
 
 class Setting {
   static async findAll() {
-    const [settings] = await pool.execute(
-      'SELECT setting_key, setting_value, setting_type, description FROM settings ORDER BY setting_key'
-    );
-    const settingsObj = {};
-    settings.forEach(setting => {
-      let value = setting.setting_value;
-      if (setting.setting_type === 'boolean') {
-        value = value === 'true' || value === '1';
-      } else if (setting.setting_type === 'number') {
-        value = parseInt(value, 10);
+    const settings = await prisma.setting.findMany({
+      orderBy: { setting_key: 'asc' },
+      select: {
+        setting_key: true,
+        setting_value: true,
+        setting_type: true,
+        description: true
       }
-      
-      settingsObj[setting.setting_key] = {
-        value,
+    });
+
+    return Object.fromEntries(settings.map((setting) => [
+      setting.setting_key,
+      {
+        value: convertValue(setting),
         type: setting.setting_type,
         description: setting.description
-      };
-    });
-    
-    return settingsObj;
+      }
+    ]));
   }
+
   static async findByKey(key) {
-    const [settings] = await pool.execute(
-      'SELECT setting_value, setting_type FROM settings WHERE setting_key = ?',
-      [key]
-    );
-    
-    if (settings.length === 0) {
-      return null;
-    }
-    
-    const setting = settings[0];
-    let value = setting.setting_value;
-    if (setting.setting_type === 'boolean') {
-      value = value === 'true' || value === '1';
-    } else if (setting.setting_type === 'number') {
-      value = parseInt(value, 10);
-    }
-    
-    return value;
+    const setting = await prisma.setting.findUnique({
+      where: { setting_key: key },
+      select: { setting_value: true, setting_type: true }
+    });
+    return setting ? convertValue(setting) : null;
   }
+
   static async update(key, value, type = 'string') {
-    let stringValue = String(value);
-    if (type === 'boolean') {
-      stringValue = value ? 'true' : 'false';
-    }
-    
-    await pool.execute(
-      `INSERT INTO settings (setting_key, setting_value, setting_type)
-       VALUES (?, ?, ?)
-       ON DUPLICATE KEY UPDATE
-         setting_value = VALUES(setting_value),
-         setting_type = VALUES(setting_type)`,
-      [key, stringValue, type]
-    );
-    
+    const stringValue = type === 'boolean' ? (value ? 'true' : 'false') : String(value);
+    await prisma.setting.upsert({
+      where: { setting_key: key },
+      create: { setting_key: key, setting_value: stringValue, setting_type: type },
+      update: { setting_value: stringValue, setting_type: type }
+    });
     return this.findByKey(key);
   }
+
   static async updateMultiple(settingsObj) {
-    const updates = [];
-    
-    for (const [key, data] of Object.entries(settingsObj)) {
+    const operations = Object.entries(settingsObj).map(([key, data]) => {
       const { value, type = 'string' } = data;
-      let stringValue = String(value);
-      
-      if (type === 'boolean') {
-        stringValue = value ? 'true' : 'false';
-      }
-      
-      updates.push(
-        pool.execute(
-          `INSERT INTO settings (setting_key, setting_value, setting_type)
-           VALUES (?, ?, ?)
-           ON DUPLICATE KEY UPDATE
-             setting_value = VALUES(setting_value),
-             setting_type = VALUES(setting_type)`,
-          [key, stringValue, type]
-        )
-      );
-    }
-    
-    await Promise.all(updates);
+      const stringValue = type === 'boolean' ? (value ? 'true' : 'false') : String(value);
+      return prisma.setting.upsert({
+        where: { setting_key: key },
+        create: { setting_key: key, setting_value: stringValue, setting_type: type },
+        update: { setting_value: stringValue, setting_type: type }
+      });
+    });
+
+    await prisma.$transaction(operations);
     return this.findAll();
   }
 }
 
 module.exports = Setting;
-

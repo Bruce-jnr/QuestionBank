@@ -12,8 +12,7 @@ async function login(req, res) {
         const { username, password } = JSON.parse(body);
         if (!username || !password) {
           res.writeHead(400, { 
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
+            'Content-Type': 'application/json'
           });
           return res.end(JSON.stringify({ 
             error: 'Username and password are required' 
@@ -23,8 +22,7 @@ async function login(req, res) {
 
         if (!user) {
           res.writeHead(401, { 
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
+            'Content-Type': 'application/json'
           });
           return res.end(JSON.stringify({ 
             error: 'Invalid username or password' 
@@ -33,17 +31,15 @@ async function login(req, res) {
         const isPasswordValid = await comparePassword(password, user.password);
         if (!isPasswordValid) {
           res.writeHead(401, { 
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
+            'Content-Type': 'application/json'
           });
           return res.end(JSON.stringify({ 
             error: 'Invalid username or password' 
           }));
         }
-        const token = generateToken(user.id, user.username);
+        const token = generateToken(user.id, user.username, 'admin');
         res.writeHead(200, { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Content-Type': 'application/json'
         });
         res.end(JSON.stringify({
           success: true,
@@ -56,8 +52,7 @@ async function login(req, res) {
 
       } catch (parseError) {
         res.writeHead(400, { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Content-Type': 'application/json'
         });
         res.end(JSON.stringify({ error: 'Invalid request body' }));
       }
@@ -66,8 +61,7 @@ async function login(req, res) {
   } catch (error) {
     console.error('Login error:', error);
     res.writeHead(500, { 
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+      'Content-Type': 'application/json'
     });
     res.end(JSON.stringify({ error: 'Internal server error' }));
   }
@@ -78,8 +72,7 @@ function verifyToken(req, res) {
 
   if (!token) {
     res.writeHead(401, { 
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+      'Content-Type': 'application/json'
     });
     return res.end(JSON.stringify({ error: 'Token required' }));
   }
@@ -87,17 +80,15 @@ function verifyToken(req, res) {
   const { verifyToken } = require('../src/config/auth');
   const decoded = verifyToken(token);
 
-  if (!decoded) {
+  if (!decoded || (decoded.role && decoded.role !== 'admin')) {
     res.writeHead(403, { 
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+      'Content-Type': 'application/json'
     });
     return res.end(JSON.stringify({ error: 'Invalid token' }));
   }
 
   res.writeHead(200, { 
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*'
+    'Content-Type': 'application/json'
   });
   res.end(JSON.stringify({ 
     valid: true, 

@@ -1,85 +1,67 @@
-const pool = require('../src/config/database');
+const prisma = require('../src/config/database');
 
 class Category {
   static async findAll() {
-    const [categories] = await pool.execute(
-      'SELECT * FROM categories ORDER BY name ASC'
-    );
-    return categories;
+    return prisma.category.findMany({ orderBy: { name: 'asc' } });
   }
+
   static async findById(id) {
-    const [categories] = await pool.execute(
-      'SELECT * FROM categories WHERE id = ?',
-      [id]
-    );
-    return categories[0] || null;
+    return prisma.category.findUnique({ where: { id: Number(id) } });
   }
+
   static async findByName(name) {
-    const [categories] = await pool.execute(
-      'SELECT * FROM categories WHERE name = ?',
-      [name]
-    );
-    return categories[0] || null;
+    return prisma.category.findUnique({ where: { name } });
   }
+
   static async create(categoryData) {
     const { name, slug, description } = categoryData;
-    const finalSlug = slug || this.generateSlug(name);
+    const category = await prisma.category.create({
+      data: {
+        name,
+        slug: slug || this.generateSlug(name),
+        description: description || null
+      },
+      select: { id: true }
+    });
+    return category.id;
+  }
 
-    const [result] = await pool.execute(
-      'INSERT INTO categories (name, slug, description) VALUES (?, ?, ?)',
-      [name, finalSlug, description || null]
+  static async update(id, categoryData) {
+    const allowedFields = ['name', 'slug', 'description'];
+    const data = Object.fromEntries(
+      allowedFields
+        .filter((field) => categoryData[field] !== undefined)
+        .map((field) => [field, categoryData[field]])
     );
 
-    return result.insertId;
-  }
-  static async update(id, categoryData) {
-    const { name, slug, description } = categoryData;
-
-    const updates = [];
-    const params = [];
-
-    if (name !== undefined) {
-      updates.push('name = ?');
-      params.push(name);
-    }
-    if (slug !== undefined) {
-      updates.push('slug = ?');
-      params.push(slug);
-    }
-    if (description !== undefined) {
-      updates.push('description = ?');
-      params.push(description);
-    }
-
-    if (updates.length === 0) {
+    if (Object.keys(data).length === 0) {
       return false;
     }
 
-    params.push(id);
-
-    const [result] = await pool.execute(
-      `UPDATE categories SET ${updates.join(', ')} WHERE id = ?`,
-      params
-    );
-
-    return result.affectedRows > 0;
+    const result = await prisma.category.updateMany({
+      where: { id: Number(id) },
+      data
+    });
+    return result.count > 0;
   }
-  static async delete(id) {
-    const [posts] = await pool.execute(
-      'SELECT COUNT(*) as count FROM posts WHERE category = (SELECT name FROM categories WHERE id = ?)',
-      [id]
-    );
 
-    if (posts[0].count > 0) {
+  static async delete(id) {
+    const category = await this.findById(id);
+    if (!category) {
+      return false;
+    }
+
+    const postCount = await prisma.post.count({
+      where: { category: category.name }
+    });
+    if (postCount > 0) {
       throw new Error('Cannot delete category that is in use by posts');
     }
 
-    const [result] = await pool.execute(
-      'DELETE FROM categories WHERE id = ?',
-      [id]
-    );
-    return result.affectedRows > 0;
+    const result = await prisma.category.deleteMany({ where: { id: Number(id) } });
+    return result.count > 0;
   }
+
   static generateSlug(name) {
     return name
       .toLowerCase()
@@ -91,4 +73,3 @@ class Category {
 }
 
 module.exports = Category;
-

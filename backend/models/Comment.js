@@ -1,123 +1,63 @@
-const pool = require('../src/config/database');
+const prisma = require('../src/config/database');
+
+function normalizeComment(comment) {
+  if (!comment) {
+    return null;
+  }
+
+  const { post, ...data } = comment;
+  if (!post) {
+    return data;
+  }
+  return { ...data, post_title: post.title, post_slug: post.slug };
+}
 
 class Comment {
   static async findByPostId(postId, options = {}) {
     const { includeReplies = true, status = 'approved' } = options;
-    
-    let query = `
-      SELECT 
-        c.id,
-        c.post_id,
-        c.parent_id,
-        c.author_name,
-        c.author_email,
-        c.content,
-        c.upvotes,
-        c.status,
-        c.created_at,
-        c.updated_at
-      FROM comments c
-      WHERE c.post_id = ?
-    `;
-    
-    const params = [postId];
-    
+    const where = { post_id: Number(postId) };
     if (status) {
-      query += ` AND c.status = ?`;
-      params.push(status);
+      where.status = status;
     }
-    
     if (!includeReplies) {
-      query += ` AND c.parent_id IS NULL`;
+      where.parent_id = null;
     }
-    
-    query += ` ORDER BY c.created_at ASC`;
-    
-    const [comments] = await pool.execute(query, params);
-    return comments;
+
+    return prisma.comment.findMany({
+      where,
+      orderBy: { created_at: 'asc' }
+    });
   }
+
   static async findById(id) {
-    const [comments] = await pool.execute(
-      `SELECT 
-        c.id,
-        c.post_id,
-        c.parent_id,
-        c.author_name,
-        c.author_email,
-        c.content,
-        c.upvotes,
-        c.status,
-        c.created_at,
-        c.updated_at
-      FROM comments c
-      WHERE c.id = ?`,
-      [id]
-    );
-    
-    return comments.length > 0 ? comments[0] : null;
+    return prisma.comment.findUnique({ where: { id: Number(id) } });
   }
+
   static async findAll(options = {}) {
-    const { 
-      page = 1, 
-      limit = 20, 
-      status = null,
-      postId = null 
-    } = options;
-    const limitInt = parseInt(limit, 10);
-    const pageInt = parseInt(page, 10);
-    const offset = (pageInt - 1) * limitInt;
-    
-    let query = `
-      SELECT 
-        c.id,
-        c.post_id,
-        c.parent_id,
-        c.author_name,
-        c.author_email,
-        c.content,
-        c.upvotes,
-        c.status,
-        c.created_at,
-        c.updated_at,
-        p.title as post_title,
-        p.slug as post_slug
-      FROM comments c
-      LEFT JOIN posts p ON c.post_id = p.id
-      WHERE 1=1
-    `;
-    
-    const params = [];
-    
+    const { page = 1, limit = 20, status = null, postId = null } = options;
+    const limitInt = Math.max(1, Math.min(100, parseInt(limit, 10) || 20));
+    const pageInt = Math.max(1, parseInt(page, 10) || 1);
+    const where = {};
     if (status) {
-      query += ` AND c.status = ?`;
-      params.push(status);
+      where.status = status;
     }
-    
     if (postId) {
-      query += ` AND c.post_id = ?`;
-      params.push(parseInt(postId, 10));
+      where.post_id = Number(postId);
     }
-    query += ` ORDER BY c.created_at DESC LIMIT ${limitInt} OFFSET ${offset}`;
-    
-    const [comments] = await pool.execute(query, params);
-    let countQuery = `SELECT COUNT(*) as total FROM comments WHERE 1=1`;
-    const countParams = [];
-    
-    if (status) {
-      countQuery += ` AND status = ?`;
-      countParams.push(status);
-    }
-    
-    if (postId) {
-      countQuery += ` AND post_id = ?`;
-      countParams.push(parseInt(postId, 10));
-    }
-    
-    const [countResult] = await pool.execute(countQuery, countParams);
-    const total = countResult[0].total;
-    
+
+    const [comments, total] = await prisma.$transaction([
+      prisma.comment.findMany({
+        where,
+        include: { post: { select: { title: true, slug: true } } },
+        orderBy: { created_at: 'desc' },
+        skip: (pageInt - 1) * limitInt,
+        take: limitInt
+      }),
+      prisma.comment.count({ where })
+    ]);
+
     return {
-      comments,
+      comments: comments.map(normalizeComment),
       pagination: {
         page: pageInt,
         limit: limitInt,
@@ -126,54 +66,51 @@ class Comment {
       }
     };
   }
+
   static async create(commentData) {
     const { post_id, parent_id, author_name, author_email, content } = commentData;
-    
-    const [result] = await pool.execute(
-      `INSERT INTO comments (post_id, parent_id, author_name, author_email, content, status)
-       VALUES (?, ?, ?, ?, ?, 'pending')`,
-      [post_id, parent_id || null, author_name, author_email || null, content]
-    );
-    
-    return this.findById(result.insertId);
+    return prisma.comment.create({
+      data: {
+        post_id: Number(post_id),
+        parent_id: parent_id ? Number(parent_id) : null,
+        author_name,
+        author_email: author_email || null,
+        content,
+        status: 'pending'
+      }
+    });
   }
+
   static async update(id, updateData) {
     const allowedFields = ['content', 'status', 'upvotes'];
-    const updates = [];
-    const values = [];
-    
-    for (const field of allowedFields) {
-      if (updateData[field] !== undefined) {
-        updates.push(`${field} = ?`);
-        values.push(updateData[field]);
-      }
-    }
-    
-    if (updates.length === 0) {
+    const data = Object.fromEntries(
+      allowedFields
+        .filter((field) => updateData[field] !== undefined)
+        .map((field) => [field, updateData[field]])
+    );
+
+    if (Object.keys(data).length === 0) {
       return this.findById(id);
     }
-    
-    values.push(id);
-    
-    await pool.execute(
-      `UPDATE comments SET ${updates.join(', ')} WHERE id = ?`,
-      values
-    );
-    
-    return this.findById(id);
+
+    const result = await prisma.comment.updateMany({
+      where: { id: Number(id) },
+      data
+    });
+    return result.count > 0 ? this.findById(id) : null;
   }
+
   static async delete(id) {
-    await pool.execute('DELETE FROM comments WHERE id = ?', [id]);
+    await prisma.comment.deleteMany({ where: { id: Number(id) } });
     return true;
   }
+
   static async upvote(id) {
-    await pool.execute(
-      'UPDATE comments SET upvotes = upvotes + 1 WHERE id = ?',
-      [id]
-    );
-    return this.findById(id);
+    return prisma.comment.update({
+      where: { id: Number(id) },
+      data: { upvotes: { increment: 1 } }
+    });
   }
 }
 
 module.exports = Comment;
-

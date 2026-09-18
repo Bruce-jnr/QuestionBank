@@ -1,40 +1,41 @@
-const pool = require('../src/config/database');
+const prisma = require('../src/config/database');
 
 class Admin {
   static async findByUsername(username) {
-    const [users] = await pool.execute(
-      'SELECT id, username, password, email FROM admins WHERE username = ?',
-      [username]
-    );
-    return users[0] || null;
+    return prisma.admin.findUnique({
+      where: { username },
+      select: { id: true, username: true, password: true, email: true }
+    });
   }
+
   static async findById(id) {
-    const [users] = await pool.execute(
-      'SELECT id, username, email FROM admins WHERE id = ?',
-      [id]
-    );
-    return users[0] || null;
+    return prisma.admin.findUnique({
+      where: { id: Number(id) },
+      select: { id: true, username: true, email: true }
+    });
   }
+
   static async create(username, password, email = null) {
-    const [result] = await pool.execute(
-      'INSERT INTO admins (username, password, email) VALUES (?, ?, ?)',
-      [username, password, email]
-    );
-    return result.insertId;
+    const admin = await prisma.admin.create({
+      data: { username, password, email },
+      select: { id: true }
+    });
+    return admin.id;
   }
+
   static async updatePassword(id, hashedPassword) {
-    await pool.execute(
-      'UPDATE admins SET password = ? WHERE id = ?',
-      [hashedPassword, id]
-    );
+    await prisma.admin.update({
+      where: { id: Number(id) },
+      data: { password: hashedPassword }
+    });
   }
+
   static async updateEmail(id, email) {
-    await pool.execute(
-      'UPDATE admins SET email = ? WHERE id = ?',
-      [email, id]
-    );
+    await prisma.admin.update({
+      where: { id: Number(id) },
+      data: { email }
+    });
   }
 }
 
 module.exports = Admin;
-

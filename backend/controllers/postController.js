@@ -18,8 +18,7 @@ function parseBody(req) {
 }
 function sendJSON(res, statusCode, data) {
   res.writeHead(statusCode, {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*'
+    'Content-Type': 'application/json'
   });
   res.end(JSON.stringify(data));
 }
@@ -76,7 +75,7 @@ async function createPost(req, res) {
 
     const { verifyToken } = require('../src/config/auth');
     const decoded = verifyToken(token);
-    if (!decoded) {
+    if (!decoded || (decoded.role && decoded.role !== 'admin')) {
       return sendJSON(res, 403, { error: 'Invalid or expired token' });
     }
 
@@ -111,7 +110,7 @@ async function createPost(req, res) {
     sendJSON(res, 201, { post, message: 'Post created successfully' });
   } catch (error) {
     console.error('Error creating post:', error);
-    if (error.code === 'ER_DUP_ENTRY' && error.sqlMessage.includes('slug')) {
+    if (error.code === 'P2002') {
       return sendJSON(res, 400, { error: 'A post with this slug already exists. Please use a different title or slug.' });
     }
     
@@ -129,7 +128,7 @@ async function updatePost(req, res) {
 
     const { verifyToken } = require('../src/config/auth');
     const decoded = verifyToken(token);
-    if (!decoded) {
+    if (!decoded || (decoded.role && decoded.role !== 'admin')) {
       return sendJSON(res, 403, { error: 'Invalid or expired token' });
     }
 
@@ -159,7 +158,7 @@ async function updatePost(req, res) {
     sendJSON(res, 200, { post, message: 'Post updated successfully' });
   } catch (error) {
     console.error('Error updating post:', error);
-    if (error.code === 'ER_DUP_ENTRY' && error.sqlMessage.includes('slug')) {
+    if (error.code === 'P2002') {
       return sendJSON(res, 400, { error: 'A post with this slug already exists. Please use a different title or slug.' });
     }
     
@@ -177,7 +176,7 @@ async function deletePost(req, res) {
 
     const { verifyToken } = require('../src/config/auth');
     const decoded = verifyToken(token);
-    if (!decoded) {
+    if (!decoded || (decoded.role && decoded.role !== 'admin')) {
       return sendJSON(res, 403, { error: 'Invalid or expired token' });
     }
 

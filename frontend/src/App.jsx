@@ -8,6 +8,7 @@ import DiagnosticPage from './pages/DiagnosticPage'
 import HomePage from './pages/HomePage'
 import QuestionBankPage from './pages/QuestionBankPage'
 import StudentAreaPage from './pages/StudentAreaPage'
+import StudySessionPage from './pages/StudySessionPage'
 import StudyGuidePage from './pages/StudyGuidePage'
 import './App.css'
 
@@ -18,6 +19,7 @@ const routes = {
   '/studyguide': StudyGuidePage,
   '/question-bank': QuestionBankPage,
   '/student-area': StudentAreaPage,
+  '/study-session': StudySessionPage,
   '/blog': BlogPage,
   '/bloglisting': BlogPage,
   '/post': ArticlePage,

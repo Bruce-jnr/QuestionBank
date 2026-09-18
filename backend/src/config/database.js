@@ -1,25 +1,19 @@
-const mysql = require('mysql2/promise');
-require('dotenv').config();
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  enableKeepAlive: true,
-  keepAliveInitialDelay: 0
+const path = require('path');
+const { PrismaClient } = require('../../generated/prisma');
+
+require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env'), override: true });
+
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is required to connect to PostgreSQL.');
+}
+
+const prisma = globalThis.__nclexPrisma || new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error']
 });
-pool.getConnection()
-  .then(connection => {
-    console.log('Database connected successfully');
-    connection.release();
-  })
-  .catch(err => {
-    console.error('Database connection error:', err.message);
-  });
 
-module.exports = pool;
+if (process.env.NODE_ENV !== 'production') {
+  globalThis.__nclexPrisma = prisma;
+}
 
+module.exports = prisma;

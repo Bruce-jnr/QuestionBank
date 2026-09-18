@@ -50,7 +50,7 @@ async function updateSettings(req, res) {
 }
 async function updateAdminProfile(req, res) {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?.userId;
     if (!userId) {
       return sendJSON(res, 401, { error: 'Unauthorized' });
     }
@@ -106,7 +106,7 @@ async function updateAdminProfile(req, res) {
 }
 async function getAdminProfile(req, res) {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?.userId;
     if (!userId) {
       return sendJSON(res, 401, { error: 'Unauthorized' });
     }
