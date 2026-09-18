@@ -814,6 +814,69 @@ blockquote cite {
   gap: 22px;
 }
 
+.study-domain-list,
+.curriculum-board {
+  display: grid;
+  gap: 32px;
+}
+
+.study-domain {
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.study-domain > header {
+  margin-bottom: 24px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.study-domain > header > span {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: white;
+  background: var(--primary);
+  font-weight: 900;
+}
+
+.study-domain header h2,
+.study-domain header p { margin: 0; }
+.study-domain header p { margin-top: 6px; color: var(--muted); }
+
+.study-module-preview { margin: 18px 0; border-top: 1px solid var(--line); }
+.study-module-preview details { border-bottom: 1px solid var(--line); }
+.study-module-preview summary { padding: 11px 0; display: flex; justify-content: space-between; gap: 12px; cursor: pointer; font-weight: 750; }
+.study-module-preview summary small { color: var(--muted); font-weight: 500; }
+.study-module-preview details > p, .module-copy { color: var(--muted); font-size: .88rem; line-height: 1.6; }
+
+.curriculum-domain {
+  overflow: hidden;
+  border: 1px solid #2c3a47;
+  border-radius: 14px;
+  background: #131f2b;
+}
+.curriculum-domain > header { padding: 22px; display: flex; justify-content: space-between; gap: 20px; border-bottom: 1px solid #2c3a47; }
+.curriculum-domain header span { color: var(--primary); font-size: .75rem; font-weight: 800; text-transform: uppercase; }
+.curriculum-domain h2 { margin: 5px 0; color: white; }
+.curriculum-domain p { margin: 0; color: rgba(255,255,255,.55); }
+.curriculum-topics { padding: 18px; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 15px; }
+.curriculum-topics > article { padding: 18px; border-radius: 10px; background: rgba(255,255,255,.045); }
+.curriculum-topic-heading { display: flex; justify-content: space-between; gap: 12px; }
+.curriculum-topic-heading h3 { margin: 5px 0; color: white; }
+.module-list { margin-top: 16px; display: grid; gap: 7px; }
+.module-list > div { padding: 9px 10px; display: flex; justify-content: space-between; align-items: center; border-radius: 7px; background: rgba(0,0,0,.18); color: white; }
+.module-list strong, .module-list small { display: block; }
+.module-list small { margin-top: 3px; color: rgba(255,255,255,.45); }
+.add-module-button { margin-top: 12px; width: 100%; padding: 9px; border: 1px dashed #405263; color: var(--primary); background: transparent; }
+.unassigned-topics { margin-top: 20px; padding: 20px; border: 1px dashed #405263; color: white; }
+.module-content-editor { min-height: 220px !important; }
+
 .topic-grid article,
 .strategy-grid article {
   padding: 26px;

@@ -32,6 +32,18 @@ export function getStudyTopics() {
   return request('/api/public/categories?type=STUDY')
 }
 
+export function getStudyGuide() {
+  return request('/api/public/study-guide')
+}
+
+export function getStudyDomains() { return request('/api/study-content/domains') }
+export function createStudyDomain(payload) { return request('/api/study-content/domains', { method: 'POST', body: JSON.stringify(payload) }) }
+export function updateStudyDomain(id, payload) { return request(`/api/study-content/domains/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }) }
+export function deleteStudyDomain(id) { return request(`/api/study-content/domains/${id}`, { method: 'DELETE' }) }
+export function createStudyModule(payload) { return request('/api/study-content/modules', { method: 'POST', body: JSON.stringify(payload) }) }
+export function updateStudyModule(id, payload) { return request(`/api/study-content/modules/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }) }
+export function deleteStudyModule(id) { return request(`/api/study-content/modules/${id}`, { method: 'DELETE' }) }
+
 export function getAdminCategories(type = '') {
   return request(`/api/categories${type ? `?type=${encodeURIComponent(type)}` : ''}`)
 }

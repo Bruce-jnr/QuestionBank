@@ -156,6 +156,13 @@ const settings = [
   ['default_post_status', 'draft', 'string', 'Default status for new posts'],
 ];
 
+const studyDomains = [
+  { name: 'Safe and Effective Care Environment', description: 'Management, coordination, safety, and infection prevention across care settings.', display_order: 1, needs: ['MANAGEMENT_OF_CARE', 'SAFETY_AND_INFECTION_CONTROL'] },
+  { name: 'Health Promotion and Maintenance', description: 'Growth, prevention, screening, education, and healthy development across the lifespan.', display_order: 2, needs: ['HEALTH_PROMOTION_AND_MAINTENANCE'] },
+  { name: 'Psychosocial Integrity', description: 'Mental health, coping, communication, crisis care, and emotional support.', display_order: 3, needs: ['PSYCHOSOCIAL_INTEGRITY'] },
+  { name: 'Physiological Integrity', description: 'Foundational care, medication therapy, risk reduction, and adaptation to illness.', display_order: 4, needs: ['BASIC_CARE_AND_COMFORT', 'PHARMACOLOGICAL_AND_PARENTERAL_THERAPIES', 'REDUCTION_OF_RISK_POTENTIAL', 'PHYSIOLOGICAL_ADAPTATION'] },
+];
+
 const questions = [
   {
     external_id: 'demo-management-001',
@@ -297,6 +304,18 @@ async function seedDatabase() {
           client_need: category.client_need ?? null,
           type: category.type ?? 'BLOG',
         },
+      });
+    }
+
+    for (const domain of studyDomains) {
+      const savedDomain = await prisma.studyDomain.upsert({
+        where: { name: domain.name },
+        create: { name: domain.name, description: domain.description, display_order: domain.display_order },
+        update: { description: domain.description, display_order: domain.display_order },
+      });
+      await prisma.category.updateMany({
+        where: { client_need: { in: domain.needs } },
+        data: { domain_id: savedDomain.id },
       });
     }
 

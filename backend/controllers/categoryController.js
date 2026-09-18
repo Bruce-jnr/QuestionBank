@@ -123,7 +123,7 @@ async function createCategory(req, res) {
     }
 
     const body = await parseBody(req);
-    const { name, slug, description, distribution, clientNeed, type } = body;
+    const { name, slug, description, distribution, clientNeed, type, domainId, displayOrder, isPublished } = body;
 
     if (!name) {
       return sendJSON(res, 400, { error: 'Category name is required' });
@@ -140,7 +140,7 @@ async function createCategory(req, res) {
       name, slug, description,
       distribution: distribution === '' || distribution == null ? null : Number(distribution),
       clientNeed,
-      type: type === 'STUDY' ? 'STUDY' : 'BLOG'
+      type: type === 'STUDY' ? 'STUDY' : 'BLOG', domainId, displayOrder, isPublished
     });
     const category = await Category.findById(categoryId);
 

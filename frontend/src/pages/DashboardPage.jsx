@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import LogoMark from '../components/LogoMark';
 import CategoryPanel from '../components/CategoryPanel';
 import QuestionBankPanel from '../components/QuestionBankPanel';
+import StudyCurriculumPanel from '../components/StudyCurriculumPanel';
 import {
   createPost,
   createStudent as createStudentAccount,
@@ -146,7 +147,7 @@ export default function DashboardPage() {
           ) : activePanel === 'categories' ? (
             <CategoryPanel categoryType="BLOG" />
           ) : activePanel === 'study-topics' ? (
-            <CategoryPanel categoryType="STUDY" />
+            <StudyCurriculumPanel />
           ) : activePanel === 'questions' ? (
             <QuestionBankPanel />
           ) : (
