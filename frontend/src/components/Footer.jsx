@@ -13,6 +13,8 @@ export default function Footer() {
             {label}
           </a>
         ))}
+        <a href="/faq">FAQ</a>
+        <a href="/privacy-policy">Privacy Policy</a>
       </div>
       <p>
         Copyright {new Date().getFullYear()} CBRUCENCLEX. All rights reserved.

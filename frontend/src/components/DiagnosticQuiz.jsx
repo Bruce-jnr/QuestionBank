@@ -51,7 +51,7 @@ export default function DiagnosticQuiz({
         </span>
         <button
           disabled={selectedAnswer === undefined}
-          onClick={onNext}
+          onClick={() => onNext(selectedAnswer)}
           type="button"
         >
           {questionNumber === total ? 'View My Results' : 'Next Question'}

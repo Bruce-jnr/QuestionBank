@@ -1,16 +1,18 @@
-import AboutPage from './pages/AboutPage'
-import AdminPage from './pages/AdminPage'
-import ArticlePage from './pages/ArticlePage'
-import BlogPage from './pages/BlogPage'
-import ContactPage from './pages/ContactPage'
-import DashboardPage from './pages/DashboardPage'
-import DiagnosticPage from './pages/DiagnosticPage'
-import HomePage from './pages/HomePage'
-import QuestionBankPage from './pages/QuestionBankPage'
-import StudentAreaPage from './pages/StudentAreaPage'
-import StudySessionPage from './pages/StudySessionPage'
-import StudyGuidePage from './pages/StudyGuidePage'
-import './App.css'
+import AboutPage from './pages/AboutPage';
+import AdminPage from './pages/AdminPage';
+import ArticlePage from './pages/ArticlePage';
+import BlogPage from './pages/BlogPage';
+import ContactPage from './pages/ContactPage';
+import DashboardPage from './pages/DashboardPage';
+import DiagnosticPage from './pages/DiagnosticPage';
+import HomePage from './pages/HomePage';
+import QuestionBankPage from './pages/QuestionBankPage';
+import StudentAreaPage from './pages/StudentAreaPage';
+import StudySessionPage from './pages/StudySessionPage';
+import StudyGuidePage from './pages/StudyGuidePage';
+import FaqPage from './pages/FaqPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import './App.css';
 
 const routes = {
   '/': HomePage,
@@ -28,10 +30,13 @@ const routes = {
   '/admin': AdminPage,
   '/dashboard': DashboardPage,
   '/diagnostic': DiagnosticPage,
-}
+  '/faq': FaqPage,
+  '/privacy': PrivacyPolicyPage,
+  '/privacy-policy': PrivacyPolicyPage,
+};
 
 export default function App() {
-  const path = window.location.pathname.replace(/\.html$/, '')
-  const Page = routes[path] || HomePage
-  return <Page />
+  const path = window.location.pathname.replace(/\.html$/, '');
+  const Page = routes[path] || HomePage;
+  return <Page />;
 }

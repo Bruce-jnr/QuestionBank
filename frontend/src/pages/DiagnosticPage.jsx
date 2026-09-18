@@ -18,8 +18,12 @@ export default function DiagnosticPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  function nextQuestion() {
+  function nextQuestion(selectedAnswer) {
     if (currentIndex === diagnosticQuestions.length - 1) {
+      setAnswers((currentAnswers) => ({
+        ...currentAnswers,
+        [currentQuestion.id]: selectedAnswer,
+      }))
       setPhase('results')
     } else {
       setCurrentIndex((index) => index + 1)
@@ -38,7 +42,7 @@ export default function DiagnosticPage() {
     <PublicLayout>
       <main className="diagnostic-page">
         {phase === 'intro' && <DiagnosticIntro preferences={preferences} onChange={setPreferences} onStart={startAssessment} />}
-        {phase === 'quiz' && <DiagnosticQuiz question={currentQuestion} questionNumber={currentIndex + 1} total={diagnosticQuestions.length} selectedAnswer={answers[currentQuestion.id]} onAnswer={(answer) => setAnswers({ ...answers, [currentQuestion.id]: answer })} onNext={nextQuestion} onExit={restart} />}
+        {phase === 'quiz' && <DiagnosticQuiz question={currentQuestion} questionNumber={currentIndex + 1} total={diagnosticQuestions.length} selectedAnswer={answers[currentQuestion.id]} onAnswer={(answer) => setAnswers((currentAnswers) => ({ ...currentAnswers, [currentQuestion.id]: answer }))} onNext={nextQuestion} onExit={restart} />}
         {phase === 'results' && <DiagnosticResults answers={answers} preferences={preferences} questions={diagnosticQuestions} onRestart={restart} />}
       </main>
     </PublicLayout>

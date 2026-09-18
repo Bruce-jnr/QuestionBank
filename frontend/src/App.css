@@ -56,7 +56,8 @@ body {
 .page-section,
 .site-footer,
 .article-page,
-.about-page {
+.about-page,
+.legal-page {
   width: min(1180px, calc(100% - 40px));
   margin-inline: auto;
 }
@@ -707,6 +708,100 @@ blockquote cite {
 }
 
 .footer-links a {
+  text-decoration: none;
+}
+
+.legal-page {
+  max-width: 900px;
+  padding-block: 72px 96px;
+}
+
+.legal-page > p,
+.legal-page > li,
+.legal-page ul {
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.legal-page h2 {
+  margin: 42px 0 12px;
+  color: var(--ink);
+  font-size: 1.45rem;
+}
+
+.legal-page a {
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+
+.legal-updated {
+  margin-top: 0;
+  color: var(--primary) !important;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.faq-page {
+  display: grid;
+  gap: 44px;
+}
+
+.faq-group h2 {
+  margin: 0 0 16px;
+}
+
+.faq-list {
+  display: grid;
+  gap: 10px;
+}
+
+.faq-list details {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 8px 24px rgba(17, 20, 24, 0.04);
+}
+
+.faq-list details[open] {
+  border-color: rgba(43, 140, 238, 0.35);
+}
+
+.faq-list summary {
+  padding: 20px 22px;
+  cursor: pointer;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.faq-list details p {
+  margin: 0;
+  padding: 0 22px 22px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.legal-contact-card {
+  padding: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-radius: 14px;
+  background: var(--soft);
+}
+
+.legal-contact-card h2 {
+  margin: 6px 0 0;
+}
+
+.legal-contact-card > a {
+  flex: 0 0 auto;
+  padding: 11px 17px;
+  border-radius: 8px;
+  color: white;
+  background: var(--primary);
   text-decoration: none;
 }
 
@@ -2385,6 +2480,97 @@ button:has(.button-spinner) {
   font-weight: 750;
 }
 
+.student-video-library {
+  margin-top: 20px;
+  padding: 24px;
+  border: 1px solid #e2e6ea;
+  border-radius: 12px;
+  background: white;
+}
+
+.video-library-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.video-library-heading h2 {
+  margin: 6px 0;
+  font-size: 1.7rem;
+}
+
+.video-library-heading p,
+.video-library-empty p {
+  margin: 0;
+  color: #617589;
+  line-height: 1.6;
+}
+
+.video-coming-soon {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: #806000;
+  background: #fff4cc;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.video-library-empty {
+  margin-top: 22px;
+  padding: 28px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 20px;
+  border: 1px dashed #cbd4dd;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f7fbff, #f8f9fa);
+}
+
+.video-library-empty strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 1.05rem;
+}
+
+.video-placeholder-icon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  color: white;
+  background: var(--primary);
+  box-shadow: 0 12px 24px rgba(43, 140, 238, 0.22);
+}
+
+.video-placeholder-icon svg {
+  width: 30px;
+  height: 30px;
+  fill: currentColor;
+}
+
+.video-feature-list {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.video-feature-list span {
+  padding: 6px 9px;
+  border: 1px solid #dbe4ed;
+  border-radius: 999px;
+  color: #52677b;
+  background: white;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
 .student-bottom-grid {
   margin-top: 20px;
   display: grid;
@@ -3128,7 +3314,8 @@ button:has(.button-spinner) {
   .page-section,
   .site-footer,
   .article-page,
-  .about-page {
+  .about-page,
+  .legal-page {
     width: min(100% - 24px, 1180px);
   }
 
@@ -3270,6 +3457,16 @@ button:has(.button-spinner) {
     padding: 28px 16px;
   }
 
+  .video-library-heading {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .video-library-empty {
+    padding: 22px;
+    grid-template-columns: 1fr;
+  }
+
   .diagnostic-summary-banner {
     align-items: flex-start;
     flex-direction: column;
@@ -3283,6 +3480,11 @@ button:has(.button-spinner) {
   .site-footer {
     align-items: flex-start;
     grid-template-columns: 1fr;
+  }
+
+  .legal-contact-card {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .footer-links {

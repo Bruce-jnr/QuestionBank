@@ -125,6 +125,7 @@ export default function StudentAreaPage() {
             </a>
             <a href="#performance">Performance</a>
             <a href="#history">History</a>
+            <a href="#videos">Videos</a>
             <a href="/study-guide">Study Guides</a>
           </nav>
         </div>
@@ -239,6 +240,38 @@ export default function StudentAreaPage() {
                 {`Start ${selectedMode === 'practice' ? 'Practice' : 'Test'}`}
               </ButtonLoader>
             </button>
+          </div>
+        </section>
+        <section className="student-video-library" id="videos">
+          <div className="video-library-heading">
+            <div>
+              <span className="category-label">Video library</span>
+              <h2>Learn from recorded sessions</h2>
+              <p>
+                Class recordings and focused video lessons will appear here as
+                soon as they are available.
+              </p>
+            </div>
+            <span className="video-coming-soon">Coming soon</span>
+          </div>
+          <div className="video-library-empty">
+            <div className="video-placeholder-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M8 7.5v9l7-4.5-7-4.5Z" />
+              </svg>
+            </div>
+            <div>
+              <strong>Your video lessons will live here</strong>
+              <p>
+                Upcoming Zoom recordings will be securely processed and added
+                to your library for on-demand viewing.
+              </p>
+              <div className="video-feature-list" aria-label="Planned video features">
+                <span>Recorded classes</span>
+                <span>Organized by topic</span>
+                <span>Secure playback</span>
+              </div>
+            </div>
           </div>
         </section>
         <section className="student-bottom-grid" id="history">

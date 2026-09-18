@@ -62,7 +62,7 @@ export default function DiagnosticResults({
           </div>
         </div>
         <div>
-          <span className="category-label">Your readiness snapshot</span>
+          <span className="category-label">Assessment complete · Your score: {score}%</span>
           <h1>{readiness}</h1>
           <p>{message}</p>
           <div className="result-actions">
