@@ -28,6 +28,45 @@ export function getCategories() {
   return request('/api/public/categories')
 }
 
+export function getStudyTopics() {
+  return request('/api/public/categories?type=STUDY')
+}
+
+export function getAdminCategories(type = '') {
+  return request(`/api/categories${type ? `?type=${encodeURIComponent(type)}` : ''}`)
+}
+
+export function createCategory(payload) {
+  return request('/api/categories', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateCategory(categoryId, payload) {
+  return request(`/api/categories/${categoryId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function deleteCategory(categoryId) {
+  return request(`/api/categories/${categoryId}`, { method: 'DELETE' })
+}
+
+export async function uploadImage(file) {
+  const body = new FormData()
+  body.append('image', file)
+  const response = await fetch('/api/upload', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || ''}` },
+    body,
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(data.error || 'Image upload failed')
+  return data.file
+}
+
 export function getPost(slug) {
   return request(`/api/public/posts/slug/${encodeURIComponent(slug)}`)
 }
@@ -62,6 +101,13 @@ export function getAdminPosts(params = '') {
   return request(`/api/posts${params ? `?${params}` : ''}`)
 }
 
+export function createPost(payload) {
+  return request('/api/posts', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function deletePost(postId) {
   return request(`/api/posts/${postId}`, { method: 'DELETE' })
 }
@@ -93,6 +139,35 @@ export function resetStudentPassword(studentId, password) {
 
 export function deleteStudent(studentId) {
   return request(`/api/students/${studentId}`, { method: 'DELETE' })
+}
+
+export function getQuestions(params = '') {
+  return request(`/api/questions${params ? `?${params}` : ''}`)
+}
+
+export function createQuestion(payload) {
+  return request('/api/questions', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateQuestion(questionId, payload) {
+  return request(`/api/questions/${questionId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function archiveQuestion(questionId) {
+  return request(`/api/questions/${questionId}`, { method: 'DELETE' })
+}
+
+export function importQuestions(questions) {
+  return request('/api/questions/import', {
+    method: 'POST',
+    body: JSON.stringify({ questions }),
+  })
 }
 
 export function studentLogin(payload) {

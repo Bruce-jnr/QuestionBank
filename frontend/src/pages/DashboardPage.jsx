@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react';
 import LogoMark from '../components/LogoMark';
+import CategoryPanel from '../components/CategoryPanel';
+import QuestionBankPanel from '../components/QuestionBankPanel';
 import {
+  createPost,
   createStudent as createStudentAccount,
   deletePost,
   deleteStudent,
   getAdminPosts,
+  getAdminCategories,
   getStudents,
   resetStudentPassword,
+  uploadImage,
   verifySession,
 } from '../services/api';
 import { formatDate } from '../utils/formatDate';
@@ -102,7 +107,15 @@ export default function DashboardPage() {
             >
               Posts
             </button>
-            <button type="button">Categories</button>
+            <button className={activePanel === 'categories' ? 'active' : ''} onClick={() => setActivePanel('categories')} type="button">Categories</button>
+            <button className={activePanel === 'study-topics' ? 'active' : ''} onClick={() => setActivePanel('study-topics')} type="button">Study Topics</button>
+            <button
+              className={activePanel === 'questions' ? 'active' : ''}
+              onClick={() => setActivePanel('questions')}
+              type="button"
+            >
+              Questions
+            </button>
             <button
               className={activePanel === 'users' ? 'active' : ''}
               onClick={() => setActivePanel('users')}
@@ -130,6 +143,12 @@ export default function DashboardPage() {
               search={search}
               setSearch={setSearch}
             />
+          ) : activePanel === 'categories' ? (
+            <CategoryPanel categoryType="BLOG" />
+          ) : activePanel === 'study-topics' ? (
+            <CategoryPanel categoryType="STUDY" />
+          ) : activePanel === 'questions' ? (
+            <QuestionBankPanel />
           ) : (
             <UsersPanel
               createStudent={createStudent}
@@ -150,11 +169,59 @@ export default function DashboardPage() {
 }
 
 function PostsPanel({ error, filteredPosts, loadPosts, search, setSearch }) {
+  const [showEditor, setShowEditor] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [editorError, setEditorError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [postForm, setPostForm] = useState({
+    title: '',
+    excerpt: '',
+    content: '',
+    category: '',
+    featured_image: '',
+    status: 'draft',
+    featured: false,
+  });
+
+  async function openEditor() {
+    setEditorError('');
+    try {
+      const data = await getAdminCategories('BLOG');
+      setCategories(data.categories || []);
+    } catch (requestError) {
+      setEditorError(requestError.message);
+    }
+    setShowEditor(true);
+  }
+
+  async function submitPost(event) {
+    event.preventDefault();
+    setSaving(true);
+    setEditorError('');
+    try {
+      await createPost({
+        ...postForm,
+        category: postForm.category || null,
+        featured_image: postForm.featured_image || null,
+      });
+      setPostForm({
+        title: '', excerpt: '', content: '', category: '',
+        featured_image: '', status: 'draft', featured: false,
+      });
+      setShowEditor(false);
+      await loadPosts();
+    } catch (requestError) {
+      setEditorError(requestError.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <>
       <div className="dashboard-heading">
         <h1>Manage Posts</h1>
-        <button type="button">Add New Post</button>
+        <button onClick={openEditor} type="button">Add New Post</button>
       </div>
       {error && <p className="error-text">{error}</p>}
       <section className="dashboard-panel">
@@ -224,7 +291,52 @@ function PostsPanel({ error, filteredPosts, loadPosts, search, setSearch }) {
           <button type="button">Next</button>
         </div>
       </section>
+      {showEditor && (
+        <PostEditor
+          categories={categories}
+          error={editorError}
+          form={postForm}
+          onClose={() => setShowEditor(false)}
+          onSubmit={submitPost}
+          saving={saving}
+          setForm={setPostForm}
+        />
+      )}
     </>
+  );
+}
+
+function PostEditor({ categories, error, form, onClose, onSubmit, saving, setForm }) {
+  const setField = (field, value) => setForm({ ...form, [field]: value });
+  const [uploading, setUploading] = useState(false);
+  async function selectImage(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try { const uploaded = await uploadImage(file); setField('featured_image', uploaded.path); }
+    catch (uploadError) { window.alert(uploadError.message); }
+    finally { setUploading(false); }
+  }
+  return (
+    <div className="admin-modal-backdrop">
+      <form className="admin-modal post-editor" onSubmit={onSubmit}>
+        <div className="modal-heading">
+          <div><span className="category-label">Blog post</span><h2>Add New Post</h2></div>
+          <button disabled={saving} onClick={onClose} type="button">Close</button>
+        </div>
+        {error && <p className="error-text">{error}</p>}
+        <div className="post-form-grid">
+          <label className="full-field">Title<input autoFocus required value={form.title} onChange={(event) => setField('title', event.target.value)} placeholder="Post title" /></label>
+          <label>Category<select value={form.category} onChange={(event) => setField('category', event.target.value)}><option value="">No category</option>{categories.map((category) => <option key={category.id || category.name} value={category.name}>{category.name}</option>)}</select></label>
+          <label>Status<select value={form.status} onChange={(event) => setField('status', event.target.value)}><option value="draft">Draft</option><option value="published">Published</option></select></label>
+          <label className="full-field">Excerpt<textarea value={form.excerpt} onChange={(event) => setField('excerpt', event.target.value)} placeholder="A short summary shown on the blog page" /></label>
+          <label className="full-field">Content<textarea className="post-content-input" required value={form.content} onChange={(event) => setField('content', event.target.value)} placeholder="Write the article content..." /></label>
+          <label className="full-field">Featured image<input accept="image/jpeg,image/png,image/gif,image/webp" disabled={uploading} onChange={selectImage} type="file" />{uploading && <small>Uploading image...</small>}{form.featured_image && <img className="post-image-preview" src={form.featured_image} alt="Post preview" />}</label>
+          <label className="post-featured-toggle"><input checked={form.featured} onChange={(event) => setField('featured', event.target.checked)} type="checkbox" /> Feature this post</label>
+        </div>
+        <div className="question-editor-actions"><button className="secondary-button" disabled={saving} onClick={onClose} type="button">Cancel</button><button disabled={saving} type="submit">{saving ? 'Saving...' : form.status === 'published' ? 'Publish Post' : 'Save Draft'}</button></div>
+      </form>
+    </div>
   );
 }
 

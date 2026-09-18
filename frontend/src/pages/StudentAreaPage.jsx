@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import LogoMark from '../components/LogoMark';
-import { studyTopics, topicKey } from '../data/studyTopics';
 import {
+  getStudyTopics,
   getStudentHistory,
   getStudentPerformance,
   startExamSession,
@@ -43,6 +43,7 @@ export default function StudentAreaPage() {
     accuracy: 0,
   });
   const [history, setHistory] = useState([]);
+  const [studyTopics, setStudyTopics] = useState([]);
   const [selectedMode, setSelectedMode] = useState('practice');
   const [topic, setTopic] = useState(
     diagnostic?.focusCategories?.[0] || 'Mixed Topics',
@@ -61,11 +62,13 @@ export default function StudentAreaPage() {
       verifyStudentSession(),
       getStudentPerformance(),
       getStudentHistory(),
+      getStudyTopics(),
     ])
-      .then(([sessionData, performanceData, historyData]) => {
+      .then(([sessionData, performanceData, historyData, categoryData]) => {
         setStudent(sessionData.student);
         setPerformance(performanceData.performance);
         setHistory(historyData.sessions || []);
+        setStudyTopics(categoryData.categories || []);
         localStorage.setItem('student', JSON.stringify(sessionData.student));
       })
       .catch(() => {
@@ -81,7 +84,7 @@ export default function StudentAreaPage() {
     try {
       const data = await startExamSession({
         mode: selectedMode.toUpperCase(),
-        clientNeed: topicKey(topic),
+        clientNeed: studyTopics.find((category) => category.name === topic)?.client_need || null,
         questionCount: Number(questionCount),
       });
       window.location.assign(`/study-session?id=${data.session.id}`);
@@ -213,8 +216,8 @@ export default function StudentAreaPage() {
                 onChange={(event) => setTopic(event.target.value)}
               >
                 <option>Mixed Topics</option>
-                {studyTopics.map(([title]) => (
-                  <option key={title}>{title}</option>
+                {studyTopics.map((category) => (
+                  <option key={category.id}>{category.name}</option>
                 ))}
               </select>
             </label>

@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import PageHero from '../components/PageHero'
 import PublicLayout from '../components/PublicLayout'
-import { studyTopics } from '../data/studyTopics'
+import { getStudyTopics } from '../services/api'
 
 const quickStart = [
   ['01', 'Assess Your Knowledge', 'Identify strong topics and the areas that need focused review.'],
@@ -19,16 +19,22 @@ const strategies = [
 export default function StudyGuidePage() {
   const [search, setSearch] = useState('')
   const [distribution, setDistribution] = useState('all')
+  const [studyTopics, setStudyTopics] = useState([])
 
-  const filteredTopics = useMemo(() => studyTopics.filter(([title, text, percentage]) => {
+  useEffect(() => {
+    getStudyTopics().then((data) => setStudyTopics(data.categories || [])).catch(() => setStudyTopics([]))
+  }, [])
+
+  const filteredTopics = useMemo(() => studyTopics.filter((topic) => {
     const term = search.trim().toLowerCase()
-    const matchesSearch = !term || `${title} ${text}`.toLowerCase().includes(term)
+    const matchesSearch = !term || `${topic.name} ${topic.description || ''}`.toLowerCase().includes(term)
+    const percentage = topic.distribution
     const matchesDistribution = distribution === 'all'
       || (distribution === 'high' && percentage >= 15)
       || (distribution === 'medium' && percentage >= 12 && percentage < 15)
       || (distribution === 'focused' && percentage < 12)
     return matchesSearch && matchesDistribution
-  }), [distribution, search])
+  }), [distribution, search, studyTopics])
 
   return (
     <PublicLayout>
@@ -40,7 +46,7 @@ export default function StudyGuidePage() {
           <label className="study-search"><span>Search</span><input onChange={(event) => setSearch(event.target.value)} placeholder="Search subjects..." type="search" value={search} /></label>
           <label className="study-filter"><span>Filter</span><select onChange={(event) => setDistribution(event.target.value)} value={distribution}><option value="all">All distributions</option><option value="high">High: 15-20%</option><option value="medium">Medium: 12-14%</option><option value="focused">Focused: 9%</option></select></label>
         </div>
-        {filteredTopics.length ? <div className="topic-grid">{filteredTopics.map(([title, text, percentage]) => <article key={title}><span className="topic-percentage">{percentage}% distribution</span><h3>{title}</h3><p>{text}</p><a href={`/blog?category=${encodeURIComponent(title)}`}>View resources</a></article>)}</div> : <p className="empty-state">No subjects match your search and filter.</p>}
+        {filteredTopics.length ? <div className="topic-grid">{filteredTopics.map((topic) => <article key={topic.id}><span className="topic-percentage">{topic.distribution}% distribution</span><h3>{topic.name}</h3><p>{topic.description}</p><a href={`/blog?category=${encodeURIComponent(topic.name)}`}>View resources</a></article>)}</div> : <p className="empty-state">No subjects match your search and filter.</p>}
       </section>
       <section className="page-section muted-section"><div className="centered-heading"><span>Build a routine</span><h2>Effective Study Strategies</h2></div><div className="strategy-grid">{strategies.map(([title, text]) => <article key={title}><h3>{title}</h3><p>{text}</p></article>)}</div></section>
     </PublicLayout>

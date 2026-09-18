@@ -25,7 +25,9 @@ function parseBody(req) {
 }
 async function getCategories(req, res) {
   try {
-    const groups = await prisma.post.groupBy({
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const type = url.searchParams.get('type') === 'STUDY' ? 'STUDY' : 'BLOG';
+    const [categories, groups] = await Promise.all([Category.findAll(type), prisma.post.groupBy({
       by: ['category'],
       where: {
         status: 'published',
@@ -36,13 +38,15 @@ async function getCategories(req, res) {
       },
       _count: { id: true },
       orderBy: { category: 'asc' }
-    });
-    const categories = groups.map((group) => ({
-      name: group.category,
-      post_count: group._count.id
-    }));
+    })]);
+    const counts = new Map(groups.map((group) => [group.category, group._count.id]));
 
-    sendJSON(res, 200, { categories });
+    sendJSON(res, 200, {
+      categories: categories.map((category) => ({
+        ...category,
+        post_count: counts.get(category.name) || 0
+      }))
+    });
   } catch (error) {
     console.error('Error fetching categories:', error);
     sendJSON(res, 500, { error: 'Internal server error' });
@@ -62,7 +66,9 @@ async function getAllCategories(req, res) {
       return sendJSON(res, 403, { error: 'Invalid or expired token' });
     }
 
-    const categories = await Category.findAll();
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const requestedType = url.searchParams.get('type');
+    const categories = await Category.findAll(['BLOG', 'STUDY'].includes(requestedType) ? requestedType : null);
     sendJSON(res, 200, { categories });
   } catch (error) {
     console.error('Error fetching categories:', error);
@@ -117,7 +123,7 @@ async function createCategory(req, res) {
     }
 
     const body = await parseBody(req);
-    const { name, slug, description } = body;
+    const { name, slug, description, distribution, clientNeed, type } = body;
 
     if (!name) {
       return sendJSON(res, 400, { error: 'Category name is required' });
@@ -127,7 +133,15 @@ async function createCategory(req, res) {
       return sendJSON(res, 400, { error: 'Category with this name already exists' });
     }
 
-    const categoryId = await Category.create({ name, slug, description });
+    if (distribution != null && (!Number.isInteger(Number(distribution)) || Number(distribution) < 0 || Number(distribution) > 100)) {
+      return sendJSON(res, 400, { error: 'Distribution must be a whole number from 0 to 100' });
+    }
+    const categoryId = await Category.create({
+      name, slug, description,
+      distribution: distribution === '' || distribution == null ? null : Number(distribution),
+      clientNeed,
+      type: type === 'STUDY' ? 'STUDY' : 'BLOG'
+    });
     const category = await Category.findById(categoryId);
 
     sendJSON(res, 201, { category, message: 'Category created successfully' });
@@ -162,6 +176,12 @@ async function updateCategory(req, res) {
     }
 
     const body = await parseBody(req);
+    if (body.distribution !== undefined) {
+      if (body.distribution !== null && body.distribution !== '' && (!Number.isInteger(Number(body.distribution)) || Number(body.distribution) < 0 || Number(body.distribution) > 100)) {
+        return sendJSON(res, 400, { error: 'Distribution must be a whole number from 0 to 100' });
+      }
+      body.distribution = body.distribution === '' ? null : body.distribution;
+    }
     const updated = await Category.update(id, body);
 
     if (!updated) {
@@ -188,7 +208,7 @@ async function deleteCategory(req, res) {
     }
 
     const decoded = verifyToken(token);
-    if (!decoded) {
+    if (!decoded || (decoded.role && decoded.role !== 'admin')) {
       return sendJSON(res, 403, { error: 'Invalid or expired token' });
     }
 

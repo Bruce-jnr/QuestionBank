@@ -65,18 +65,41 @@ function questionData(data, createdBy) {
 }
 
 async function listQuestions(req, res) {
+  const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+  const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 20));
+  const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
   const where = {
     ...(req.query.status ? { status: req.query.status } : {}),
     ...(req.query.clientNeed ? { client_need: req.query.clientNeed } : {}),
     ...(req.query.questionType ? { question_type: req.query.questionType } : {}),
+    ...(search ? {
+      OR: [
+        { external_id: { contains: search, mode: 'insensitive' } },
+        { stem: { contains: search, mode: 'insensitive' } },
+        { prompt: { contains: search, mode: 'insensitive' } },
+      ],
+    } : {}),
   };
 
   try {
-    const questions = await prisma.question.findMany({
-      where,
-      orderBy: { created_at: 'desc' },
+    const [questions, total] = await prisma.$transaction([
+      prisma.question.findMany({
+        where,
+        orderBy: { created_at: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.question.count({ where }),
+    ]);
+    return res.json({
+      questions,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
     });
-    return res.json({ questions });
   } catch (error) {
     console.error('List questions error:', error);
     return res.status(500).json({ error: 'Unable to load questions' });

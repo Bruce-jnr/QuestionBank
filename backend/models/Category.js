@@ -1,8 +1,11 @@
 const prisma = require('../src/config/database');
 
 class Category {
-  static async findAll() {
-    return prisma.category.findMany({ orderBy: { name: 'asc' } });
+  static async findAll(type = null) {
+    return prisma.category.findMany({
+      where: type ? { type } : {},
+      orderBy: { name: 'asc' }
+    });
   }
 
   static async findById(id) {
@@ -14,12 +17,15 @@ class Category {
   }
 
   static async create(categoryData) {
-    const { name, slug, description } = categoryData;
+    const { name, slug, description, distribution, clientNeed, type } = categoryData;
     const category = await prisma.category.create({
       data: {
         name,
         slug: slug || this.generateSlug(name),
-        description: description || null
+        description: description || null,
+        distribution: distribution ?? null,
+        client_need: clientNeed || null,
+        type: type || 'BLOG'
       },
       select: { id: true }
     });
@@ -27,11 +33,14 @@ class Category {
   }
 
   static async update(id, categoryData) {
-    const allowedFields = ['name', 'slug', 'description'];
+    const fieldMap = {
+      name: 'name', slug: 'slug', description: 'description',
+      distribution: 'distribution', clientNeed: 'client_need', type: 'type'
+    };
     const data = Object.fromEntries(
-      allowedFields
-        .filter((field) => categoryData[field] !== undefined)
-        .map((field) => [field, categoryData[field]])
+      Object.entries(fieldMap)
+        .filter(([field]) => categoryData[field] !== undefined)
+        .map(([field, databaseField]) => [databaseField, categoryData[field] === '' ? null : categoryData[field] ?? null])
     );
 
     if (Object.keys(data).length === 0) {

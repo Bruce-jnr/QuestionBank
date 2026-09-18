@@ -13,7 +13,7 @@ async function uploadFile(req, res) {
     }
 
     const decoded = verifyToken(token);
-    if (!decoded) {
+    if (!decoded || (decoded.role && decoded.role !== 'admin')) {
       res.writeHead(403, {
         'Content-Type': 'application/json'
       });

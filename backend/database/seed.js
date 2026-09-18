@@ -11,6 +11,70 @@ const { hashPassword } = require('../src/config/auth');
 
 const categories = [
   {
+    name: 'Management of Care',
+    slug: 'management-of-care',
+    description: 'Prioritization, delegation, advocacy, collaboration, and continuity of care.',
+    distribution: 20,
+    client_need: 'MANAGEMENT_OF_CARE',
+    type: 'STUDY',
+  },
+  {
+    name: 'Pharmacological and Parenteral Therapies',
+    slug: 'pharmacological-and-parenteral-therapies',
+    description: 'Medication administration, expected effects, adverse effects, and parenteral therapy.',
+    distribution: 15,
+    client_need: 'PHARMACOLOGICAL_AND_PARENTERAL_THERAPIES',
+    type: 'STUDY',
+  },
+  {
+    name: 'Physiological Adaptation',
+    slug: 'physiological-adaptation',
+    description: 'Care for acute, chronic, life-threatening, and complex health conditions.',
+    distribution: 14,
+    client_need: 'PHYSIOLOGICAL_ADAPTATION',
+    type: 'STUDY',
+  },
+  {
+    name: 'Reduction of Risk Potential',
+    slug: 'reduction-of-risk-potential',
+    description: 'Recognizing complications and reducing risks related to treatments and procedures.',
+    distribution: 12,
+    client_need: 'REDUCTION_OF_RISK_POTENTIAL',
+    type: 'STUDY',
+  },
+  {
+    name: 'Safety and Infection Control',
+    slug: 'safety-and-infection-control',
+    description: 'Protecting clients and healthcare personnel from health and environmental hazards.',
+    distribution: 12,
+    client_need: 'SAFETY_AND_INFECTION_CONTROL',
+    type: 'STUDY',
+  },
+  {
+    name: 'Health Promotion and Maintenance',
+    slug: 'health-promotion-and-maintenance',
+    description: 'Growth, development, prevention, screening, and healthy lifestyle choices.',
+    distribution: 9,
+    client_need: 'HEALTH_PROMOTION_AND_MAINTENANCE',
+    type: 'STUDY',
+  },
+  {
+    name: 'Psychosocial Integrity',
+    slug: 'psychosocial-integrity',
+    description: 'Mental health, coping, therapeutic communication, and emotional support.',
+    distribution: 9,
+    client_need: 'PSYCHOSOCIAL_INTEGRITY',
+    type: 'STUDY',
+  },
+  {
+    name: 'Basic Care and Comfort',
+    slug: 'basic-care-and-comfort',
+    description: 'Mobility, nutrition, elimination, personal care, rest, and non-pharmacological comfort.',
+    distribution: 9,
+    client_need: 'BASIC_CARE_AND_COMFORT',
+    type: 'STUDY',
+  },
+  {
     name: 'Pharmacology',
     slug: 'pharmacology',
     description: 'Medication and drug-related topics',
@@ -226,7 +290,13 @@ async function seedDatabase() {
       await prisma.category.upsert({
         where: { name: category.name },
         create: category,
-        update: { slug: category.slug, description: category.description },
+        update: {
+          slug: category.slug,
+          description: category.description,
+          distribution: category.distribution ?? null,
+          client_need: category.client_need ?? null,
+          type: category.type ?? 'BLOG',
+        },
       });
     }
 

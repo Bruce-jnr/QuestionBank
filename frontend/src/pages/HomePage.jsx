@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react'
 import PostCards from '../components/PostCards'
 import PublicLayout from '../components/PublicLayout'
 import ScrollReveal from '../components/ScrollReveal'
-import { studyTopics } from '../data/studyTopics'
-import { getPublishedPosts } from '../services/api'
+import { getPublishedPosts, getStudyTopics } from '../services/api'
 
 const testimonials = [
   ['Sarah Mitchell', 'The study guides and practice questions were incredibly helpful. I passed on my first attempt.'],
@@ -13,10 +12,14 @@ const testimonials = [
 
 export default function HomePage() {
   const [posts, setPosts] = useState([])
+  const [studyTopics, setStudyTopics] = useState([])
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    getPublishedPosts('limit=6').then((data) => setPosts(data.posts || [])).catch(() => setPosts([]))
+    Promise.all([getPublishedPosts('limit=6'), getStudyTopics()]).then(([postData, categoryData]) => {
+      setPosts(postData.posts || [])
+      setStudyTopics(categoryData.categories || [])
+    }).catch(() => { setPosts([]); setStudyTopics([]) })
   }, [])
 
   function submitSearch(event) {
@@ -69,8 +72,8 @@ export default function HomePage() {
         <div className="subject-table-wrap">
           <table className="subject-table">
             <thead><tr><th>Client Need Categories</th><th>Distribution</th></tr></thead>
-            <tbody>{studyTopics.map(([subject, , percentage]) => <tr key={subject}><td>{subject}</td><td><span>{percentage}%</span><div><i style={{ width: `${percentage * 4}%` }} /></div></td></tr>)}</tbody>
-            <tfoot><tr><th>Total</th><th>100%</th></tr></tfoot>
+            <tbody>{studyTopics.map((topic) => <tr key={topic.id}><td>{topic.name}</td><td><span>{topic.distribution}%</span><div><i style={{ width: `${topic.distribution * 4}%` }} /></div></td></tr>)}</tbody>
+            <tfoot><tr><th>Total</th><th>{studyTopics.reduce((total, topic) => total + topic.distribution, 0)}%</th></tr></tfoot>
           </table>
         </div>
       </ScrollReveal>
