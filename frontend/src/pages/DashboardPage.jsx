@@ -3,6 +3,7 @@ import LogoMark from '../components/LogoMark';
 import CategoryPanel from '../components/CategoryPanel';
 import QuestionBankPanel from '../components/QuestionBankPanel';
 import StudyCurriculumPanel from '../components/StudyCurriculumPanel';
+import ButtonLoader from '../components/ButtonLoader';
 import {
   createPost,
   createStudent as createStudentAccount,
@@ -24,6 +25,7 @@ export default function DashboardPage() {
   const [activePanel, setActivePanel] = useState('posts');
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [students, setStudents] = useState([]);
+  const [creatingStudent, setCreatingStudent] = useState(false);
   const [studentForm, setStudentForm] = useState({
     name: '',
     email: '',
@@ -69,6 +71,7 @@ export default function DashboardPage() {
 
   async function createStudent(event) {
     event.preventDefault();
+    setCreatingStudent(true);
     setError('');
     try {
       await createStudentAccount(studentForm);
@@ -77,6 +80,8 @@ export default function DashboardPage() {
       setShowCreateUser(false);
     } catch (requestError) {
       setError(requestError.message);
+    } finally {
+      setCreatingStudent(false);
     }
   }
 
@@ -95,7 +100,7 @@ export default function DashboardPage() {
           <a className="dashboard-identity" href="/">
             <LogoMark />
             <span>
-              <strong>NCLEX Prep</strong>
+              <strong>CBRUCENCLEX</strong>
               <small>Admin Panel</small>
             </span>
           </a>
@@ -153,6 +158,7 @@ export default function DashboardPage() {
           ) : (
             <UsersPanel
               createStudent={createStudent}
+              creatingStudent={creatingStudent}
               error={error}
               setShowCreateUser={setShowCreateUser}
               setStudentForm={setStudentForm}
@@ -174,6 +180,7 @@ function PostsPanel({ error, filteredPosts, loadPosts, search, setSearch }) {
   const [categories, setCategories] = useState([]);
   const [editorError, setEditorError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deletingPostId, setDeletingPostId] = useState(null);
   const [postForm, setPostForm] = useState({
     title: '',
     excerpt: '',
@@ -262,17 +269,24 @@ function PostsPanel({ error, filteredPosts, loadPosts, search, setSearch }) {
                         Edit
                       </button>
                       <button
+                        aria-busy={deletingPostId === post.id}
                         className="delete-action"
+                        disabled={deletingPostId !== null}
                         onClick={async () => {
                           if (window.confirm('Delete this post?')) {
-                            await deletePost(post.id);
-                            loadPosts();
+                            setDeletingPostId(post.id);
+                            try {
+                              await deletePost(post.id);
+                              await loadPosts();
+                            } finally {
+                              setDeletingPostId(null);
+                            }
                           }
                         }}
                         title="Delete post"
                         type="button"
                       >
-                        Delete
+                        <ButtonLoader loading={deletingPostId === post.id} loadingText="Deleting...">Delete</ButtonLoader>
                       </button>
                     </div>
                   </td>
@@ -335,7 +349,7 @@ function PostEditor({ categories, error, form, onClose, onSubmit, saving, setFor
           <label className="full-field">Featured image<input accept="image/jpeg,image/png,image/gif,image/webp" disabled={uploading} onChange={selectImage} type="file" />{uploading && <small>Uploading image...</small>}{form.featured_image && <img className="post-image-preview" src={form.featured_image} alt="Post preview" />}</label>
           <label className="post-featured-toggle"><input checked={form.featured} onChange={(event) => setField('featured', event.target.checked)} type="checkbox" /> Feature this post</label>
         </div>
-        <div className="question-editor-actions"><button className="secondary-button" disabled={saving} onClick={onClose} type="button">Cancel</button><button disabled={saving} type="submit">{saving ? 'Saving...' : form.status === 'published' ? 'Publish Post' : 'Save Draft'}</button></div>
+        <div className="question-editor-actions"><button className="secondary-button" disabled={saving} onClick={onClose} type="button">Cancel</button><button aria-busy={saving} disabled={saving} type="submit"><ButtonLoader loading={saving} loadingText="Saving...">{form.status === 'published' ? 'Publish Post' : 'Save Draft'}</ButtonLoader></button></div>
       </form>
     </div>
   );
@@ -343,6 +357,7 @@ function PostEditor({ categories, error, form, onClose, onSubmit, saving, setFor
 
 function UsersPanel({
   createStudent,
+  creatingStudent,
   error,
   loadStudents,
   setError,
@@ -352,14 +367,19 @@ function UsersPanel({
   studentForm,
   students,
 }) {
+  const [studentAction, setStudentAction] = useState({ type: '', id: null });
+
   async function removeStudent(student) {
     if (!window.confirm(`Remove ${student.name}'s account and study history?`))
       return;
+    setStudentAction({ type: 'remove', id: student.id });
     try {
       await deleteStudent(student.id);
       await loadStudents();
     } catch (requestError) {
       setError(requestError.message);
+    } finally {
+      setStudentAction({ type: '', id: null });
     }
   }
 
@@ -368,11 +388,14 @@ function UsersPanel({
       `Enter a new temporary password for ${student.name}`,
     );
     if (!password) return;
+    setStudentAction({ type: 'reset', id: student.id });
     try {
       await resetStudentPassword(student.id, password);
       window.alert('Password updated successfully.');
     } catch (requestError) {
       setError(requestError.message);
+    } finally {
+      setStudentAction({ type: '', id: null });
     }
   }
 
@@ -443,17 +466,21 @@ function UsersPanel({
                   <td>
                     <div className="dashboard-actions">
                       <button
+                        aria-busy={studentAction.type === 'reset' && studentAction.id === student.id}
+                        disabled={studentAction.id !== null}
                         onClick={() => resetPassword(student)}
                         type="button"
                       >
-                        Reset password
+                        <ButtonLoader loading={studentAction.type === 'reset' && studentAction.id === student.id} loadingText="Resetting...">Reset password</ButtonLoader>
                       </button>
                       <button
+                        aria-busy={studentAction.type === 'remove' && studentAction.id === student.id}
                         className="delete-action"
+                        disabled={studentAction.id !== null}
                         onClick={() => removeStudent(student)}
                         type="button"
                       >
-                        Remove
+                        <ButtonLoader loading={studentAction.type === 'remove' && studentAction.id === student.id} loadingText="Removing...">Remove</ButtonLoader>
                       </button>
                     </div>
                   </td>
@@ -466,6 +493,7 @@ function UsersPanel({
       {showCreateUser && (
         <CreateStudentModal
           createStudent={createStudent}
+          creatingStudent={creatingStudent}
           setShowCreateUser={setShowCreateUser}
           setStudentForm={setStudentForm}
           studentForm={studentForm}
@@ -477,6 +505,7 @@ function UsersPanel({
 
 function CreateStudentModal({
   createStudent,
+  creatingStudent,
   setShowCreateUser,
   setStudentForm,
   studentForm,
@@ -489,7 +518,7 @@ function CreateStudentModal({
             <span className="category-label">Student account</span>
             <h2>Add New Student</h2>
           </div>
-          <button onClick={() => setShowCreateUser(false)} type="button">
+          <button disabled={creatingStudent} onClick={() => setShowCreateUser(false)} type="button">
             Close
           </button>
         </div>
@@ -532,7 +561,7 @@ function CreateStudentModal({
         <p>
           The student will use these credentials to access the Question Bank.
         </p>
-        <button type="submit">Create Student Account</button>
+        <button aria-busy={creatingStudent} disabled={creatingStudent} type="submit"><ButtonLoader loading={creatingStudent} loadingText="Creating account...">Create Student Account</ButtonLoader></button>
       </form>
     </div>
   );

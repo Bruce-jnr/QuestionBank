@@ -1,22 +1,22 @@
-import { useEffect, useState } from 'react'
-import LogoMark from './LogoMark'
-import Navbar from './Navbar'
+import { useEffect, useState } from 'react';
+import LogoMark from './LogoMark';
+import Navbar from './Navbar';
 
 export default function Header() {
-  const [open, setOpen] = useState(false)
-  const currentPath = window.location.pathname.replace(/\.html$/, '')
+  const [open, setOpen] = useState(false);
+  const currentPath = window.location.pathname.replace(/\.html$/, '');
 
   useEffect(() => {
-    document.documentElement.removeAttribute('data-theme')
-    localStorage.removeItem('theme')
-  }, [])
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.removeItem('theme');
+  }, []);
 
   return (
     <header className="site-header">
       <div className="site-header-inner">
         <a className="brand" href="/">
           <LogoMark />
-          <span>NCLEX Prep</span>
+          <span>C-BRUCE NCLEX</span>
         </a>
         <Navbar currentPath={currentPath} open={open} />
         <div className="header-actions">
@@ -50,5 +50,5 @@ export default function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }

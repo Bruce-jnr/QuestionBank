@@ -1,5 +1,5 @@
 {
-  "name": "nclex_review_academy",
+  "name": "cbrucenclex-backend",
   "version": "1.0.0",
   "description": "Dynamic site served by Node",
   "main": "server.js",

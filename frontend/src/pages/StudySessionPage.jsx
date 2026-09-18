@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import LogoMark from '../components/LogoMark';
+import ButtonLoader from '../components/ButtonLoader';
 import {
   finalizeExamSession,
   getExamSession,
@@ -62,7 +63,7 @@ export default function StudySessionPage() {
 
   function choose(optionId) {
     if (feedback && session.mode === 'PRACTICE') return;
-    if (currentQuestion.questionType === 'MULTIPLE_RESPONSE') {
+    if (['MULTIPLE_RESPONSE', 'EXTENDED_MULTIPLE_RESPONSE', 'HOT_SPOT'].includes(currentQuestion.questionType)) {
       setSelected((values) =>
         values.includes(optionId)
           ? values.filter((value) => value !== optionId)
@@ -159,7 +160,7 @@ export default function StudySessionPage() {
           <a className="student-brand" href="/student-area">
             <LogoMark />
             <span>
-              <strong>NCLEX Prep</strong>
+              <strong>CBRUCENCLEX</strong>
               <small>Student Area</small>
             </span>
           </a>
@@ -224,6 +225,11 @@ export default function StudySessionPage() {
   }
 
   const isLast = currentIndex === session.questions.length - 1;
+  const multiple = ['MULTIPLE_RESPONSE', 'EXTENDED_MULTIPLE_RESPONSE', 'HOT_SPOT'].includes(currentQuestion.questionType);
+  const groupedOptions = currentQuestion.options.reduce((groups, option) => {
+    const group = option.group || 'Response';
+    return { ...groups, [group]: [...(groups[group] || []), option] };
+  }, {});
 
   return (
     <main className="study-session-page">
@@ -231,7 +237,7 @@ export default function StudySessionPage() {
         <a className="student-brand" href="/student-area">
           <LogoMark />
           <span>
-            <strong>NCLEX Prep</strong>
+            <strong>CBRUCENCLEX</strong>
             <small>
               {session.mode === 'PRACTICE' ? 'Practice Mode' : 'Test Mode'}
             </small>
@@ -256,23 +262,29 @@ export default function StudySessionPage() {
       </section>
       <section className="session-question-card">
         <span className="category-label">
-          {currentQuestion.questionType === 'MULTIPLE_RESPONSE'
+          {multiple
             ? 'Select all that apply'
+            : currentQuestion.questionType === 'DRAG_DROP'
+              ? 'Select items in the correct order'
+              : ['CLOZE_DROP_DOWN', 'MATRIX_GRID'].includes(currentQuestion.questionType)
+                ? 'Complete each response'
             : 'Choose one answer'}
         </span>
         <p className="session-stem">{currentQuestion.stem}</p>
         <h1>{currentQuestion.prompt}</h1>
+        {currentQuestion.content?.exhibits?.length > 0 && <div className="ngn-exhibits">{currentQuestion.content.exhibits.map((exhibit) => <details key={exhibit.title}><summary>{exhibit.title}</summary><p>{exhibit.content}</p></details>)}</div>}
+        {['CLOZE_DROP_DOWN', 'MATRIX_GRID'].includes(currentQuestion.questionType) ? <div className="ngn-grouped-options">{Object.entries(groupedOptions).map(([group, options]) => <label key={group}><span>{group}</span><select disabled={Boolean(feedback) && session.mode === 'PRACTICE'} onChange={(event) => setSelected((values) => [...values.filter((id) => !options.some((option) => option.id === id)), event.target.value].filter(Boolean))} value={selected.find((id) => options.some((option) => option.id === id)) || ''}><option value="">Select...</option>{options.map((option) => <option key={option.id} value={option.id}>{option.text}</option>)}</select></label>)}</div> : null}
         <div className="session-answer-options">
-          {currentQuestion.options.map((option) => (
+          {!['CLOZE_DROP_DOWN', 'MATRIX_GRID'].includes(currentQuestion.questionType) && currentQuestion.options.map((option) => (
             <button
               className={selected.includes(option.id) ? 'selected' : ''}
               disabled={Boolean(feedback) && session.mode === 'PRACTICE'}
               key={option.id}
-              onClick={() => choose(option.id)}
+              onClick={() => currentQuestion.questionType === 'DRAG_DROP' ? setSelected((values) => values.includes(option.id) ? values.filter((id) => id !== option.id) : [...values, option.id]) : choose(option.id)}
               type="button"
             >
               <span>{option.id.toUpperCase()}</span>
-              {option.text}
+              {currentQuestion.questionType === 'DRAG_DROP' && selected.includes(option.id) ? `${selected.indexOf(option.id) + 1}. ` : ''}{option.text}
             </button>
           ))}
         </div>
@@ -296,6 +308,7 @@ export default function StudySessionPage() {
             Previous
           </button>
           <button
+            aria-busy={saving}
             disabled={saving}
             onClick={
               feedback && session.mode === 'PRACTICE'
@@ -304,15 +317,15 @@ export default function StudySessionPage() {
             }
             type="button"
           >
-            {saving
-              ? 'Saving...'
-              : feedback && session.mode === 'PRACTICE'
+            <ButtonLoader loading={saving} loadingText="Saving...">
+              {feedback && session.mode === 'PRACTICE'
                 ? isLast
                   ? 'Complete Session'
                   : 'Next Question'
                 : isLast
                   ? 'Submit Session'
                   : 'Save and Continue'}
+            </ButtonLoader>
           </button>
         </div>
       </section>

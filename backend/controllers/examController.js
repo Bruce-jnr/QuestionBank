@@ -40,6 +40,7 @@ function exposedQuestion(question, revealAnswers = false) {
     stem: question.stem,
     prompt: question.prompt,
     options: question.options,
+    content: question.content,
     clientNeed: question.client_need,
     questionType: question.question_type,
     ...(revealAnswers ? {
@@ -101,7 +102,6 @@ async function startSession(req, res) {
 
   const where = {
     status: 'PUBLISHED',
-    question_type: { in: ['MULTIPLE_CHOICE', 'MULTIPLE_RESPONSE'] },
     ...(result.data.clientNeed ? { client_need: result.data.clientNeed } : {}),
   };
 

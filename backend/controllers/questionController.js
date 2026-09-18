@@ -15,8 +15,12 @@ const clientNeeds = [
 const questionTypes = [
   'MULTIPLE_CHOICE',
   'MULTIPLE_RESPONSE',
+  'EXTENDED_MULTIPLE_RESPONSE',
+  'DRAG_DROP',
+  'HOT_SPOT',
   'MATRIX_GRID',
   'CLOZE_DROP_DOWN',
+  'CASE_STUDY',
   'RATIONALE_PAIRED',
   'BOW_TIE',
 ];
@@ -28,7 +32,9 @@ const questionSchema = z.object({
   options: z.array(z.object({
     id: z.string().min(1),
     text: z.string().min(1),
-  })).min(2),
+    group: z.string().optional(),
+  }).passthrough()).min(2),
+  content: z.record(z.string(), z.unknown()).optional().default({}),
   correctAnswers: z.array(z.string().min(1)).min(1),
   rationale: z.string().trim().min(1),
   clientNeed: z.enum(clientNeeds),
@@ -53,6 +59,7 @@ function questionData(data, createdBy) {
     ...(data.stem !== undefined ? { stem: data.stem } : {}),
     ...(data.prompt !== undefined ? { prompt: data.prompt } : {}),
     ...(data.options !== undefined ? { options: data.options } : {}),
+    ...(data.content !== undefined ? { content: data.content } : {}),
     ...(data.correctAnswers !== undefined ? { correct_answers: data.correctAnswers } : {}),
     ...(data.rationale !== undefined ? { rationale: data.rationale } : {}),
     ...(data.clientNeed !== undefined ? { client_need: data.clientNeed } : {}),

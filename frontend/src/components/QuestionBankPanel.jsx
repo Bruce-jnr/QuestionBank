@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import ButtonLoader from './ButtonLoader';
 import {
   archiveQuestion,
   createQuestion,
@@ -24,8 +25,12 @@ const clientNeeds = [
 const questionTypes = [
   ['MULTIPLE_CHOICE', 'Multiple choice'],
   ['MULTIPLE_RESPONSE', 'Multiple response'],
+  ['EXTENDED_MULTIPLE_RESPONSE', 'NGN extended multiple response'],
+  ['DRAG_DROP', 'NGN drag and drop'],
+  ['HOT_SPOT', 'NGN enhanced hot spot'],
   ['MATRIX_GRID', 'Matrix grid'],
   ['CLOZE_DROP_DOWN', 'Cloze drop-down'],
+  ['CASE_STUDY', 'NGN case study item'],
   ['RATIONALE_PAIRED', 'Rationale paired'],
   ['BOW_TIE', 'Bow tie'],
 ];
@@ -39,6 +44,7 @@ const emptyQuestion = {
     { id: 'b', text: '' },
   ],
   correctAnswers: ['a'],
+  content: {},
   rationale: '',
   clientNeed: 'MANAGEMENT_OF_CARE',
   questionType: 'MULTIPLE_CHOICE',
@@ -54,6 +60,7 @@ function apiQuestion(question) {
     prompt: question.prompt,
     options: question.options,
     correctAnswers: question.correct_answers,
+    content: question.content || {},
     rationale: question.rationale,
     clientNeed: question.client_need,
     questionType: question.question_type,
@@ -123,6 +130,7 @@ function normalizeImport(question) {
     options: Array.isArray(question.options)
       ? question.options
       : parseOptions(question.options || ''),
+    content: question.content || {},
     correctAnswers: Array.isArray(question.correctAnswers)
       ? question.correctAnswers
       : (question.correctAnswers || '')
@@ -149,14 +157,23 @@ export default function QuestionBankPanel() {
     totalPages: 1,
   });
   const [loading, setLoading] = useState(true);
+  const [loadingAction, setLoadingAction] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [archivingId, setArchivingId] = useState(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyQuestion);
   const fileInput = useRef(null);
 
-  async function loadQuestions(page = 1, searchTerm = appliedSearch) {
+  async function loadQuestions(
+    page = 1,
+    searchTerm = appliedSearch,
+    action = '',
+  ) {
     setLoading(true);
+    setLoadingAction(action);
     const params = new URLSearchParams({ page: String(page), limit: '20' });
     if (searchTerm) params.set('search', searchTerm);
     try {
@@ -173,6 +190,7 @@ export default function QuestionBankPanel() {
       setError(requestError.message);
     } finally {
       setLoading(false);
+      setLoadingAction('');
     }
   }
 
@@ -196,7 +214,7 @@ export default function QuestionBankPanel() {
     event.preventDefault();
     const term = search.trim();
     setAppliedSearch(term);
-    loadQuestions(1, term);
+    loadQuestions(1, term, 'search');
   }
 
   function openEditor(question = null) {
@@ -215,6 +233,7 @@ export default function QuestionBankPanel() {
 
   async function saveQuestion(event) {
     event.preventDefault();
+    setSaving(true);
     setError('');
     setNotice('');
     try {
@@ -231,6 +250,8 @@ export default function QuestionBankPanel() {
       await loadQuestions(pagination.page);
     } catch (requestError) {
       setError(requestError.message);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -239,6 +260,7 @@ export default function QuestionBankPanel() {
     if (!file) return;
     setError('');
     setNotice('');
+    setImporting(true);
     try {
       const text = await file.text();
       const raw = file.name.toLowerCase().endsWith('.json')
@@ -258,12 +280,14 @@ export default function QuestionBankPanel() {
     } catch (importError) {
       setError(importError.message || 'Unable to import questions.');
     } finally {
+      setImporting(false);
       event.target.value = '';
     }
   }
 
   async function archive(question) {
     if (!window.confirm('Archive this question?')) return;
+    setArchivingId(question.id);
     try {
       await archiveQuestion(question.id);
       const targetPage =
@@ -273,6 +297,8 @@ export default function QuestionBankPanel() {
       await loadQuestions(targetPage);
     } catch (requestError) {
       setError(requestError.message);
+    } finally {
+      setArchivingId(null);
     }
   }
 
@@ -313,11 +339,15 @@ export default function QuestionBankPanel() {
             CSV Template
           </button>
           <button
+            aria-busy={importing}
             className="secondary-button"
+            disabled={importing}
             onClick={() => fileInput.current?.click()}
             type="button"
           >
-            Upload JSON or CSV
+            <ButtonLoader loading={importing} loadingText="Importing...">
+              Upload JSON or CSV
+            </ButtonLoader>
           </button>
           <button onClick={() => openEditor()} type="button">
             Add Question
@@ -342,8 +372,17 @@ export default function QuestionBankPanel() {
             placeholder="Search questions..."
             value={search}
           />
-          <button disabled={loading} type="submit">
-            Search
+          <button
+            aria-busy={loadingAction === 'search'}
+            disabled={loading}
+            type="submit"
+          >
+            <ButtonLoader
+              loading={loadingAction === 'search'}
+              loadingText="Searching..."
+            >
+              Search
+            </ButtonLoader>
           </button>
         </form>
         <div className="dashboard-table-wrap">
@@ -385,11 +424,19 @@ export default function QuestionBankPanel() {
                       </button>
                       <button
                         className="delete-action"
-                        disabled={question.status === 'ARCHIVED'}
+                        aria-busy={archivingId === question.id}
+                        disabled={
+                          question.status === 'ARCHIVED' || archivingId !== null
+                        }
                         onClick={() => archive(question)}
                         type="button"
                       >
-                        Archive
+                        <ButtonLoader
+                          loading={archivingId === question.id}
+                          loadingText="Archiving..."
+                        >
+                          Archive
+                        </ButtonLoader>
                       </button>
                     </div>
                   </td>
@@ -405,22 +452,38 @@ export default function QuestionBankPanel() {
         </div>
         <div className="dashboard-pagination question-pagination">
           <button
+            aria-busy={loadingAction === 'previous'}
             disabled={loading || pagination.page <= 1}
-            onClick={() => loadQuestions(pagination.page - 1)}
+            onClick={() =>
+              loadQuestions(pagination.page - 1, appliedSearch, 'previous')
+            }
             type="button"
           >
-            Previous
+            <ButtonLoader
+              loading={loadingAction === 'previous'}
+              loadingText="Loading..."
+            >
+              Previous
+            </ButtonLoader>
           </button>
           <span>
             Page {pagination.page} of {pagination.totalPages} ·{' '}
             {pagination.total} questions
           </span>
           <button
+            aria-busy={loadingAction === 'next'}
             disabled={loading || pagination.page >= pagination.totalPages}
-            onClick={() => loadQuestions(pagination.page + 1)}
+            onClick={() =>
+              loadQuestions(pagination.page + 1, appliedSearch, 'next')
+            }
             type="button"
           >
-            Next
+            <ButtonLoader
+              loading={loadingAction === 'next'}
+              loadingText="Loading..."
+            >
+              Next
+            </ButtonLoader>
           </button>
         </div>
       </section>
@@ -433,6 +496,7 @@ export default function QuestionBankPanel() {
             setForm(emptyQuestion);
           }}
           onSave={saveQuestion}
+          saving={saving}
           setForm={setForm}
         />
       )}
@@ -440,7 +504,7 @@ export default function QuestionBankPanel() {
   );
 }
 
-function QuestionEditor({ editing, form, onClose, onSave, setForm }) {
+function QuestionEditor({ editing, form, onClose, onSave, saving, setForm }) {
   const setField = (field, value) => setForm({ ...form, [field]: value });
   function setOption(index, field, value) {
     setField(
@@ -458,7 +522,7 @@ function QuestionEditor({ editing, form, onClose, onSave, setForm }) {
             <span className="category-label">Question editor</span>
             <h2>{editing ? 'Edit Question' : 'Add Question'}</h2>
           </div>
-          <button onClick={onClose} type="button">
+          <button disabled={saving} onClick={onClose} type="button">
             Close
           </button>
         </div>
@@ -568,6 +632,19 @@ function QuestionEditor({ editing, form, onClose, onSave, setForm }) {
                 required
                 value={option.text}
               />
+              {['CLOZE_DROP_DOWN', 'MATRIX_GRID'].includes(
+                form.questionType,
+              ) && (
+                <input
+                  aria-label={`Option ${index + 1} response group`}
+                  onChange={(event) =>
+                    setOption(index, 'group', event.target.value)
+                  }
+                  placeholder="Row or blank label"
+                  required
+                  value={option.group || ''}
+                />
+              )}
               <button
                 disabled={form.options.length <= 2}
                 onClick={() =>
@@ -622,11 +699,18 @@ function QuestionEditor({ editing, form, onClose, onSave, setForm }) {
           />
         </label>
         <div className="question-editor-actions">
-          <button className="secondary-button" onClick={onClose} type="button">
+          <button
+            className="secondary-button"
+            disabled={saving}
+            onClick={onClose}
+            type="button"
+          >
             Cancel
           </button>
-          <button type="submit">
-            {editing ? 'Save Changes' : 'Create Question'}
+          <button aria-busy={saving} disabled={saving} type="submit">
+            <ButtonLoader loading={saving} loadingText="Saving...">
+              {editing ? 'Save Changes' : 'Create Question'}
+            </ButtonLoader>
           </button>
         </div>
       </form>

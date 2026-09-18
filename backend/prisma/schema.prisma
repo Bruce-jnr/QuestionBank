@@ -33,8 +33,12 @@ enum QuestionStatus {
 enum QuestionType {
   MULTIPLE_CHOICE
   MULTIPLE_RESPONSE
+  EXTENDED_MULTIPLE_RESPONSE
+  DRAG_DROP
+  HOT_SPOT
   MATRIX_GRID
   CLOZE_DROP_DOWN
+  CASE_STUDY
   RATIONALE_PAIRED
   BOW_TIE
 }
@@ -104,6 +108,7 @@ model Question {
   stem              String                @db.Text
   prompt            String                @db.Text
   options           Json
+  content           Json                  @default("{}")
   correct_answers   Json
   rationale         String                @db.Text
   client_need       ClientNeedCategory

@@ -23,18 +23,36 @@ function moduleData(body) {
 
 async function publicStudyGuide(req, res) {
   try {
-    const domains = await prisma.studyDomain.findMany({
-      where: { is_published: true },
-      orderBy: [{ display_order: 'asc' }, { name: 'asc' }],
-      include: {
-        topics: {
-          where: { type: 'STUDY', is_published: true },
-          orderBy: [{ display_order: 'asc' }, { name: 'asc' }],
-          include: { modules: { where: { is_published: true }, orderBy: [{ display_order: 'asc' }, { title: 'asc' }] } },
+    const [domains, questionGroups] = await Promise.all([
+      prisma.studyDomain.findMany({
+        where: { is_published: true },
+        orderBy: [{ display_order: 'asc' }, { name: 'asc' }],
+        include: {
+          topics: {
+            where: { type: 'STUDY', is_published: true },
+            orderBy: [{ display_order: 'asc' }, { name: 'asc' }],
+            include: { modules: { where: { is_published: true }, orderBy: [{ display_order: 'asc' }, { title: 'asc' }] } },
+          },
         },
-      },
+      }),
+      prisma.question.groupBy({
+        by: ['client_need'],
+        where: { status: 'PUBLISHED' },
+        _count: { id: true },
+      }),
+    ]);
+    const questionCounts = new Map(
+      questionGroups.map((group) => [group.client_need, group._count.id]),
+    );
+    return res.json({
+      domains: domains.map((domain) => ({
+        ...domain,
+        topics: domain.topics.map((topic) => ({
+          ...topic,
+          question_count: questionCounts.get(topic.client_need) || 0,
+        })),
+      })),
     });
-    return res.json({ domains });
   } catch (error) {
     console.error('Load study guide error:', error);
     return res.status(500).json({ error: 'Unable to load study guide' });

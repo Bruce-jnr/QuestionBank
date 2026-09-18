@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ButtonLoader from '../components/ButtonLoader';
 import PublicLayout from '../components/PublicLayout';
 import { studentLogin } from '../services/api';
 
@@ -85,11 +86,11 @@ export default function QuestionBankPage() {
             />
           </label>
           {error && <p className="error-text">{error}</p>}
-          <button disabled={loading} type="submit">
-            {loading ? 'Signing in...' : 'Open Student Area'}
+          <button aria-busy={loading} disabled={loading} type="submit">
+            <ButtonLoader loading={loading} loadingText="Signing in...">Open Student Area</ButtonLoader>
           </button>
           <p className="student-help">
-            Need access? Contact your NCLEX Prep administrator.
+            Need access? Contact your CBRUCENCLEX administrator.
           </p>
         </form>
       </section>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import LogoMark from '../components/LogoMark';
+import ButtonLoader from '../components/ButtonLoader';
 import {
   getStudyTopics,
   getStudentHistory,
@@ -114,7 +115,7 @@ export default function StudentAreaPage() {
           <a className="student-brand" href="/">
             <LogoMark />
             <span>
-              <strong>NCLEX Prep</strong>
+              <strong>CBRUCENCLEX</strong>
               <small>Student Area</small>
             </span>
           </a>
@@ -233,10 +234,10 @@ export default function StudentAreaPage() {
                 <option>85</option>
               </select>
             </label>
-            <button disabled={starting} onClick={startSession} type="button">
-              {starting
-                ? 'Starting...'
-                : `Start ${selectedMode === 'practice' ? 'Practice' : 'Test'}`}
+            <button aria-busy={starting} disabled={starting} onClick={startSession} type="button">
+              <ButtonLoader loading={starting} loadingText="Starting...">
+                {`Start ${selectedMode === 'practice' ? 'Practice' : 'Test'}`}
+              </ButtonLoader>
             </button>
           </div>
         </section>

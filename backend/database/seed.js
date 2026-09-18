@@ -129,7 +129,7 @@ const categories = [
 const settings = [
   [
     'site_name',
-    'NCLEX Review Academy',
+    'CBRUCENCLEX',
     'string',
     'Site name displayed in header and title',
   ],

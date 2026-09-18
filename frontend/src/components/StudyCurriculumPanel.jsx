@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import ButtonLoader from './ButtonLoader';
 import {
   createCategory,
   createStudyDomain,
@@ -44,6 +45,7 @@ export default function StudyCurriculumPanel() {
   const [topics, setTopics] = useState([]);
   const [editor, setEditor] = useState(null);
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   async function load() {
     try {
@@ -68,6 +70,7 @@ export default function StudyCurriculumPanel() {
 
   async function save(event) {
     event.preventDefault();
+    setSaving(true);
     setError('');
     try {
       if (editor.kind === 'domain') {
@@ -91,6 +94,8 @@ export default function StudyCurriculumPanel() {
       await load();
     } catch (requestError) {
       setError(requestError.message);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -314,6 +319,7 @@ export default function StudyCurriculumPanel() {
           editor={editor}
           onClose={() => setEditor(null)}
           onSave={save}
+          saving={saving}
           setEditor={setEditor}
         />
       )}
@@ -321,7 +327,14 @@ export default function StudyCurriculumPanel() {
   );
 }
 
-function CurriculumEditor({ domains, editor, onClose, onSave, setEditor }) {
+function CurriculumEditor({
+  domains,
+  editor,
+  onClose,
+  onSave,
+  saving,
+  setEditor,
+}) {
   const field = (name, value) =>
     setEditor({ ...editor, form: { ...editor.form, [name]: value } });
   return (
@@ -337,7 +350,7 @@ function CurriculumEditor({ domains, editor, onClose, onSave, setEditor }) {
               {editor.id ? 'Edit' : 'Add'} {editor.kind}
             </h2>
           </div>
-          <button onClick={onClose} type="button">
+          <button disabled={saving} onClick={onClose} type="button">
             Close
           </button>
         </div>
@@ -472,10 +485,19 @@ function CurriculumEditor({ domains, editor, onClose, onSave, setEditor }) {
           Published
         </label>
         <div className="question-editor-actions">
-          <button className="secondary-button" onClick={onClose} type="button">
+          <button
+            className="secondary-button"
+            disabled={saving}
+            onClick={onClose}
+            type="button"
+          >
             Cancel
           </button>
-          <button type="submit">Save</button>
+          <button aria-busy={saving} disabled={saving} type="submit">
+            <ButtonLoader loading={saving} loadingText="Saving...">
+              Save
+            </ButtonLoader>
+          </button>
         </div>
       </form>
     </div>
