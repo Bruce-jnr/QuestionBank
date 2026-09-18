@@ -43,35 +43,39 @@ export default function BlogPage() {
         title="NCLEX Study Resources"
         text="Expert guidance, practical study strategies, and focused nursing review."
       />
-      <section className="page-section blog-layout">
-        <aside className="filter-panel">
-          <h3>Search</h3>
-          <input
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search articles"
-            value={search}
-          />
-          <h3>Categories</h3>
-          {['All', ...categories.map((item) => item.name)].map((category) => (
-            <button
-              className={selected === category ? 'active' : ''}
-              key={category}
-              onClick={() => setSelected(category)}
-              type="button"
+      <section className="page-section">
+        <div className="study-topic-toolbar">
+          <label className="study-search">
+            <span>Search</span>
+            <input
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search articles..."
+              type="search"
+              value={search}
+            />
+          </label>
+          <label className="study-filter">
+            <span>Filter</span>
+            <select
+              onChange={(event) => setSelected(event.target.value)}
+              value={selected}
             >
-              {category}
-            </button>
-          ))}
-        </aside>
-        <div>
-          {loading ? (
-            <p className="empty-state">Loading articles...</p>
-          ) : filtered.length ? (
-            <PostCards posts={filtered} />
-          ) : (
-            <p className="empty-state">No articles match your search.</p>
-          )}
+              <option value="All">All categories</option>
+              {categories.map((category) => (
+                <option key={category.id || category.name} value={category.name}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
+        {loading ? (
+          <p className="empty-state">Loading articles...</p>
+        ) : filtered.length ? (
+          <PostCards posts={filtered} />
+        ) : (
+          <p className="empty-state">No articles match your search and filter.</p>
+        )}
       </section>
     </PublicLayout>
   );
