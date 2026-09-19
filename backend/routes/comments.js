@@ -7,6 +7,8 @@ const {
   deleteComment
 } = require('../controllers/commentController');
 const { authenticateToken } = require('../middleware/auth');
+const { createRateLimiter } = require('../middleware/rateLimit');
+const commentRateLimit = createRateLimiter({ message: 'Too many comment actions. Please try again in 15 minutes.' });
 function handlePublicCommentRoutes(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const pathname = url.pathname;
@@ -16,12 +18,12 @@ function handlePublicCommentRoutes(req, res) {
     return true;
   }
   if (pathname === '/api/public/comments' && req.method === 'POST') {
-    createComment(req, res);
+    commentRateLimit(req, res, () => createComment(req, res));
     return true;
   }
   const upvoteMatch = pathname.match(/^\/api\/public\/comments\/(\d+)\/upvote$/);
   if (upvoteMatch && req.method === 'POST') {
-    upvoteComment(req, res);
+    commentRateLimit(req, res, () => upvoteComment(req, res));
     return true;
   }
 

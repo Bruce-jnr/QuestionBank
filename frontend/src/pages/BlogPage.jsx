@@ -40,7 +40,7 @@ export default function BlogPage() {
       <PageHero
         image={image1}
         imageAlt="Healthcare professional reviewing digital nursing resources"
-        title="NCLEX Study Resources"
+        title="NCLEX News and Updates"
         text="Expert guidance, practical study strategies, and focused nursing review."
       />
       <section className="page-section">
@@ -62,7 +62,10 @@ export default function BlogPage() {
             >
               <option value="All">All categories</option>
               {categories.map((category) => (
-                <option key={category.id || category.name} value={category.name}>
+                <option
+                  key={category.id || category.name}
+                  value={category.name}
+                >
                   {category.name}
                 </option>
               ))}
@@ -74,7 +77,9 @@ export default function BlogPage() {
         ) : filtered.length ? (
           <PostCards posts={filtered} />
         ) : (
-          <p className="empty-state">No articles match your search and filter.</p>
+          <p className="empty-state">
+            No articles match your search and filter.
+          </p>
         )}
       </section>
     </PublicLayout>

@@ -49,15 +49,23 @@ async function getPostComments(req, res) {
 async function createComment(req, res) {
   try {
     let body = '';
+    let bodyBytes = 0;
+    let requestTooLarge = false;
     req.on('data', chunk => {
+      bodyBytes += chunk.length;
+      if (bodyBytes > 16 * 1024) {
+        requestTooLarge = true;
+        return;
+      }
       body += chunk.toString();
     });
 
     req.on('end', async () => {
       try {
+        if (requestTooLarge) return sendJSON(res, 413, { error: 'Comment request is too large' });
         const data = JSON.parse(body);
         const { post_id, parent_id, author_name, author_email, content } = data;
-        if (!post_id || !author_name || !content) {
+        if (!post_id || typeof author_name !== 'string' || typeof content !== 'string' || !author_name.trim() || !content.trim()) {
           return sendJSON(res, 400, { 
             error: 'Missing required fields: post_id, author_name, content' 
           });
@@ -67,6 +75,12 @@ async function createComment(req, res) {
           return sendJSON(res, 400, { 
             error: 'Comment must be at least 3 characters long' 
           });
+        }
+        if (content.trim().length > 5000 || author_name.trim().length > 100) {
+          return sendJSON(res, 400, { error: 'Comment name or content is too long' });
+        }
+        if (author_email && (author_email.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(author_email))) {
+          return sendJSON(res, 400, { error: 'Enter a valid email address' });
         }
         const post = await Post.findById(post_id);
         if (!post || post.status !== 'published') {

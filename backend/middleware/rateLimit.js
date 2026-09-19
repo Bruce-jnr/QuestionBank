@@ -19,6 +19,11 @@ function createRateLimiter({
 
   return function rateLimit(req, res, next) {
     const now = Date.now();
+    if (clients.size > 1000) {
+      for (const [address, value] of clients) {
+        if (value.resetAt <= now) clients.delete(address);
+      }
+    }
     const key = clientAddress(req);
     let entry = clients.get(key);
 

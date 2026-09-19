@@ -53,7 +53,9 @@ const topicImages = {
 };
 
 export function StudyGuideContent({ embedded = false }) {
-  const [search, setSearch] = useState(() => new URLSearchParams(window.location.search).get('search') || '');
+  const [search, setSearch] = useState(
+    () => new URLSearchParams(window.location.search).get('search') || '',
+  );
   const [distribution, setDistribution] = useState('all');
   const [domains, setDomains] = useState([]);
 
@@ -92,12 +94,23 @@ export function StudyGuideContent({ embedded = false }) {
 
   return (
     <>
-      {embedded ? <div className="embedded-guide-heading"><div><span className="category-label">Study guides</span><h1>Study by topic</h1><p>Review lessons without leaving your student dashboard.</p></div><a href="/student-area">Back to dashboard</a></div> : <PageHero
-        align="center"
-        className="study-guide-hero"
-        title="NCLEX Study Guide"
-        text="A clear path from your first review session to exam day."
-      />}
+      {embedded ? (
+        <div className="embedded-guide-heading">
+          <div>
+            <span className="category-label">Study guides</span>
+            <h1>Study by topic</h1>
+            <p>Review lessons without leaving your student dashboard.</p>
+          </div>
+          <a href="/student-area">Back to dashboard</a>
+        </div>
+      ) : (
+        <PageHero
+          align="center"
+          className="study-guide-hero"
+          title="NCLEX Study Guide"
+          text="A clear path from your first review session to exam day."
+        />
+      )}
       <section className={embedded ? 'embedded-guide-content' : 'page-section'}>
         <div className="quick-start">
           <h2>Quick Start Guide</h2>
@@ -152,6 +165,11 @@ export function StudyGuideContent({ embedded = false }) {
                 <div className="topic-grid">
                   {domain.topics.map((topic, topicIndex) => (
                     <article className="topic-image-card" key={topic.id}>
+                      <a
+                        aria-label={`Practice ${topic.name}`}
+                        className="topic-card-link"
+                        href={`/student-area?topic=${encodeURIComponent(topic.name)}`}
+                      />
                       <div
                         className="topic-card-visual"
                         style={{
@@ -161,49 +179,61 @@ export function StudyGuideContent({ embedded = false }) {
                       >
                         <div className="topic-card-overlay">
                           <div className="topic-card-meta">
-                            <span className="topic-percentage">{topic.distribution}% distribution</span>
                             {embedded ? (
                               <span className="topic-question-count total-count">
-                                {topic.question_count || 0} {topic.question_count === 1 ? 'question' : 'questions'}
+                                {topic.question_count || 0}{' '}
+                                {topic.question_count === 1
+                                  ? 'question'
+                                  : 'questions'}
                               </span>
-                            ) : <>
-                              <span className="topic-question-count free-count">{topic.free_question_count || 0} free</span>
-                              <a className="topic-question-count premium-count" href="/pricing" title="View Premium plan"><ActionIcon name="diamond" size={11} /> +{topic.premium_question_count || 0}<span className="sr-only"> premium questions</span></a>
-                            </>}
+                            ) : (
+                              <>
+                                <span className="topic-question-count free-count">
+                                  {topic.free_question_count || 0} free
+                                </span>
+                                <a
+                                  className="topic-question-count premium-count"
+                                  href="/pricing"
+                                  title="View Premium plan"
+                                >
+                                  <ActionIcon name="diamond" size={11} /> +
+                                  {topic.premium_question_count || 0}
+                                  <span className="sr-only">
+                                    {' '}
+                                    premium questions
+                                  </span>
+                                </a>
+                              </>
+                            )}
                           </div>
                           <h3>{topic.name}</h3>
                           <p>{topic.description}</p>
                         </div>
                       </div>
-                      <div className="topic-card-content">
                       {topic.modules?.length > 0 && (
-                        <div className="study-module-preview">
-                          {topic.modules.map((module) => (
-                            <details key={module.id}>
-                              <summary>
-                                <span>{module.title}</span>
-                                <small>
-                                  {module.estimated_minutes
-                                    ? `${module.estimated_minutes} min`
-                                    : 'Lesson'}
-                                </small>
-                              </summary>
-                              <p>{module.summary}</p>
-                              {module.content && (
-                                <div className="module-copy">
-                                  {module.content}
-                                </div>
-                              )}
-                            </details>
-                          ))}
+                        <div className="topic-card-content">
+                          <div className="study-module-preview">
+                            {topic.modules.map((module) => (
+                              <details key={module.id}>
+                                <summary>
+                                  <span>{module.title}</span>
+                                  <small>
+                                    {module.estimated_minutes
+                                      ? `${module.estimated_minutes} min`
+                                      : 'Lesson'}
+                                  </small>
+                                </summary>
+                                <p>{module.summary}</p>
+                                {module.content && (
+                                  <div className="module-copy">
+                                    {module.content}
+                                  </div>
+                                )}
+                              </details>
+                            ))}
+                          </div>
                         </div>
                       )}
-                      <a
-                        href={`/student-area?topic=${encodeURIComponent(topic.name)}`}
-                      >
-                        Practice this topic
-                      </a>
-                      </div>
                     </article>
                   ))}
                 </div>
@@ -216,7 +246,11 @@ export function StudyGuideContent({ embedded = false }) {
           </p>
         )}
       </section>
-      <section className={embedded ? 'embedded-guide-strategies' : 'page-section muted-section'}>
+      <section
+        className={
+          embedded ? 'embedded-guide-strategies' : 'page-section muted-section'
+        }
+      >
         <div className="centered-heading">
           <span>Build a routine</span>
           <h2>Effective Study Strategies</h2>
@@ -235,5 +269,9 @@ export function StudyGuideContent({ embedded = false }) {
 }
 
 export default function StudyGuidePage() {
-  return <PublicLayout><StudyGuideContent /></PublicLayout>
+  return (
+    <PublicLayout>
+      <StudyGuideContent />
+    </PublicLayout>
+  );
 }

@@ -94,7 +94,8 @@ body {
 .logo-mark {
   width: 30px;
   height: 30px;
-  color: var(--primary);
+  display: block;
+  object-fit: contain;
 }
 
 .main-nav {
@@ -426,7 +427,7 @@ body {
 
 h2 {
   margin: 7px 0 0;
-  font-size: clamp(2rem, 4vw, 3rem);
+  font-size: clamp(1rem, 4vw, 2rem);
   letter-spacing: -0.04em;
 }
 
@@ -629,6 +630,11 @@ blockquote {
   gap: 10px;
 }
 
+.study-link {
+  padding: 0.5rem;
+  margin-top: 50px;
+}
+
 .study-search > span,
 .study-filter > span {
   color: var(--muted);
@@ -727,10 +733,7 @@ blockquote cite {
   justify-content: space-between;
   gap: 20px;
 }
-.embedded-guide-heading h1 {
-  margin: 5px 0;
-  font-size: 1rem;
-}
+
 .embedded-guide-heading p {
   margin: 0;
   color: #617589;
@@ -1216,10 +1219,6 @@ blockquote cite {
   font-size: clamp(2.5rem, 5vw, 4rem);
 }
 
-.study-guide-hero h1 {
-  font-size: clamp(2rem, 4vw, 3.25rem);
-}
-
 .quick-start {
   padding: 36px;
   margin-bottom: 90px;
@@ -1511,9 +1510,33 @@ button:has(.button-spinner) {
 }
 
 .topic-grid .topic-image-card {
+  position: relative;
   padding: 0;
   display: flex;
   flex-direction: column;
+}
+
+.topic-card-link {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.topic-card-link:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 4px;
+}
+
+.topic-image-card:has(.topic-card-link:hover) {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(17, 20, 24, 0.13);
+}
+
+.topic-image-card .study-module-preview,
+.topic-image-card .premium-count {
+  position: relative;
+  z-index: 2;
 }
 
 .topic-card-visual {
@@ -1872,10 +1895,9 @@ button:has(.button-spinner) {
 .dashboard-identity .logo-mark {
   width: 40px;
   height: 40px;
-  padding: 8px;
-  border-radius: 50%;
-  color: white;
-  background: var(--primary);
+  padding: 5px;
+  border-radius: 10px;
+  background: white;
 }
 
 .dashboard-identity span {
@@ -3359,14 +3381,15 @@ body.offcanvas-open {
 
 .session-stem {
   margin: 18px 0 8px;
-  color: #617589;
+  color: #111418;
   line-height: 1.65;
 }
 
 .session-question-card h1 {
   margin: 0 0 30px;
-  font-size: clamp(1.65rem, 4vw, 2.55rem);
-  line-height: 1.25;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 .session-answer-options {

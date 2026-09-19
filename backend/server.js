@@ -10,6 +10,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '.env'), override: true
 const { handleApiRoutes } = require('./routes');
 const { mountExpressRoutes } = require('./routes/express');
 const { cors } = require('./middleware/cors');
+const { securityHeaders } = require('./middleware/securityHeaders');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -17,6 +18,8 @@ const frontendDir = path.resolve(__dirname, '../frontend/dist');
 const frontendIndex = path.join(frontendDir, 'index.html');
 const uploadsDir = path.resolve(__dirname, 'public/uploads');
 
+app.disable('x-powered-by');
+app.use(securityHeaders);
 app.use(cors());
 
 mountExpressRoutes(app);
