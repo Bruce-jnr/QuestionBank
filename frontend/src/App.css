@@ -1173,6 +1173,11 @@ blockquote cite {
   background: #101922;
 }
 
+.page-hero.has-image.contact-hero,
+.page-hero.has-image.study-guide-hero {
+  min-height: 350px;
+}
+
 .page-hero.has-image::after {
   content: '';
   position: absolute;
@@ -4066,6 +4071,11 @@ body.offcanvas-open {
   .page-hero.has-image {
     min-height: 400px;
     padding: 44px 20px;
+  }
+
+  .page-hero.has-image.contact-hero,
+  .page-hero.has-image.study-guide-hero {
+    min-height: 280px;
   }
 
   .page-hero.has-image::after {

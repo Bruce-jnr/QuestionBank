@@ -105,9 +105,11 @@ export function StudyGuideContent({ embedded = false }) {
         </div>
       ) : (
         <PageHero
-          align="center"
-          className="study-guide-hero"
-          title="NCLEX Study Guide"
+        align="center"
+        className="study-guide-hero"
+        image="/images/study-guide-banner.png"
+        imageAlt="Nursing student reviewing NCLEX study materials"
+        title="NCLEX Study Guide"
           text="A clear path from your first review session to exam day."
         />
       )}

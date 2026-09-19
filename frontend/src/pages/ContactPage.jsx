@@ -30,6 +30,9 @@ export default function ContactPage() {
   return (
     <PublicLayout>
       <PageHero
+        className="contact-hero"
+        image="/images/contact-banner.png"
+        imageAlt="Nurse educator ready to support students"
         title="Get in Touch"
         text="Have questions about NCLEX prep? We are here to help."
       />
