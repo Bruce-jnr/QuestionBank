@@ -11,6 +11,7 @@ const { handleApiRoutes } = require('./routes');
 const { mountExpressRoutes } = require('./routes/express');
 const { cors } = require('./middleware/cors');
 const { securityHeaders } = require('./middleware/securityHeaders');
+const prisma = require('./src/config/database');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -49,6 +50,29 @@ app.use((error, req, res, next) => {
   return res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
+async function startServer() {
+  try {
+    await prisma.$connect();
+    await prisma.$queryRaw`SELECT 1`;
+    console.log('Database connected successfully.');
+
+    app.listen(port, () => {
+      console.log(`Server running at http://localhost:${port}`);
+    });
+  } catch (error) {
+    console.error('Database connection failed:', error.message);
+    await prisma.$disconnect().catch(() => {});
+    process.exit(1);
+  }
+}
+
+async function shutdown(signal) {
+  console.log(`${signal} received. Closing database connection.`);
+  await prisma.$disconnect();
+  process.exit(0);
+}
+
+process.once('SIGINT', () => shutdown('SIGINT'));
+process.once('SIGTERM', () => shutdown('SIGTERM'));
+
+startServer();
