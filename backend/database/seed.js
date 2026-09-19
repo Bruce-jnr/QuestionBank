@@ -139,7 +139,12 @@ const settings = [
     'string',
     'Site description for SEO',
   ],
-  ['contact_email', 'admin@nclexprep.com', 'string', 'Contact email address'],
+  [
+    'contact_email',
+    process.env.CONTACT_EMAIL || process.env.ADMIN_EMAIL || 'support@cbrucenclex.com',
+    'string',
+    'Contact email address',
+  ],
   ['posts_per_page', '10', 'number', 'Number of posts to display per page'],
   [
     'comments_enabled',
@@ -282,8 +287,12 @@ async function seedDatabase() {
   try {
     const adminUsername = process.env.ADMIN_USERNAME;
     const adminPassword = process.env.ADMIN_PASSWORD;
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.CONTACT_EMAIL;
     if (!adminUsername || !adminPassword || adminPassword.length < 16) {
       throw new Error('ADMIN_USERNAME and ADMIN_PASSWORD (minimum 16 characters) are required in .env');
+    }
+    if (!adminEmail) {
+      throw new Error('ADMIN_EMAIL or CONTACT_EMAIL is required in .env');
     }
     const hashedPassword = await hashPassword(adminPassword);
 
@@ -292,9 +301,9 @@ async function seedDatabase() {
       create: {
         username: adminUsername,
         password: hashedPassword,
-        email: 'admin@nclexprep.com',
+        email: adminEmail,
       },
-      update: { password: hashedPassword },
+      update: { password: hashedPassword, email: adminEmail },
     });
 
     for (const category of categories) {
