@@ -2,6 +2,7 @@ const express = require('express');
 const {
   finalizeSession,
   getHistory,
+  getAvailability,
   getPerformance,
   getSession,
   startSession,
@@ -13,6 +14,7 @@ const router = express.Router();
 
 router.use(authenticateStudent);
 router.post('/', startSession);
+router.get('/availability', getAvailability);
 router.get('/history', getHistory);
 router.get('/performance', getPerformance);
 router.get('/:id', getSession);

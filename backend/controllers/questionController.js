@@ -42,6 +42,7 @@ const questionSchema = z.object({
   scoringMethod: z.enum(['ZERO_ONE', 'PLUS_MINUS', 'RATIONALE']),
   difficulty: z.number().min(0).max(1).default(0.5),
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).default('DRAFT'),
+  accessTier: z.enum(['FREE', 'PREMIUM']).default('FREE'),
 });
 
 const updateQuestionSchema = questionSchema.partial().refine(
@@ -67,6 +68,7 @@ function questionData(data, createdBy) {
     ...(data.scoringMethod !== undefined ? { scoring_method: data.scoringMethod } : {}),
     ...(data.difficulty !== undefined ? { difficulty: data.difficulty } : {}),
     ...(data.status !== undefined ? { status: data.status } : {}),
+    ...(data.accessTier !== undefined ? { access_tier: data.accessTier } : {}),
     ...(createdBy !== undefined ? { created_by: createdBy } : {}),
   };
 }
@@ -75,10 +77,15 @@ async function listQuestions(req, res) {
   const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
   const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 20));
   const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+  const status = ['DRAFT', 'PUBLISHED', 'ARCHIVED'].includes(req.query.status) ? req.query.status : '';
+  const clientNeed = clientNeeds.includes(req.query.clientNeed) ? req.query.clientNeed : '';
+  const questionType = questionTypes.includes(req.query.questionType) ? req.query.questionType : '';
+  const accessTier = ['FREE', 'PREMIUM'].includes(req.query.accessTier) ? req.query.accessTier : '';
   const where = {
-    ...(req.query.status ? { status: req.query.status } : {}),
-    ...(req.query.clientNeed ? { client_need: req.query.clientNeed } : {}),
-    ...(req.query.questionType ? { question_type: req.query.questionType } : {}),
+    ...(status ? { status } : {}),
+    ...(clientNeed ? { client_need: clientNeed } : {}),
+    ...(questionType ? { question_type: questionType } : {}),
+    ...(accessTier ? { access_tier: accessTier } : {}),
     ...(search ? {
       OR: [
         { external_id: { contains: search, mode: 'insensitive' } },

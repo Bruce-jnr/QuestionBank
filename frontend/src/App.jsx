@@ -12,6 +12,8 @@ import StudySessionPage from './pages/StudySessionPage';
 import StudyGuidePage from './pages/StudyGuidePage';
 import FaqPage from './pages/FaqPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import PricingPage from './pages/PricingPage';
+import NotFoundPage from './pages/NotFoundPage';
 import './App.css';
 
 const routes = {
@@ -33,10 +35,11 @@ const routes = {
   '/faq': FaqPage,
   '/privacy': PrivacyPolicyPage,
   '/privacy-policy': PrivacyPolicyPage,
+  '/pricing': PricingPage,
 };
 
 export default function App() {
   const path = window.location.pathname.replace(/\.html$/, '');
-  const Page = routes[path] || HomePage;
+  const Page = routes[path] || NotFoundPage;
   return <Page />;
 }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import PageHero from '../components/PageHero';
 import PublicLayout from '../components/PublicLayout';
+import ActionIcon from '../components/ActionIcon';
 import { getStudyGuide } from '../services/api';
 
 const quickStart = [
@@ -51,8 +52,8 @@ const topicImages = {
   PHYSIOLOGICAL_ADAPTATION: '/images/topic-physiological.png',
 };
 
-export default function StudyGuidePage() {
-  const [search, setSearch] = useState('');
+export function StudyGuideContent({ embedded = false }) {
+  const [search, setSearch] = useState(() => new URLSearchParams(window.location.search).get('search') || '');
   const [distribution, setDistribution] = useState('all');
   const [domains, setDomains] = useState([]);
 
@@ -90,13 +91,13 @@ export default function StudyGuidePage() {
   );
 
   return (
-    <PublicLayout>
-      <PageHero
+    <>
+      {embedded ? <div className="embedded-guide-heading"><div><span className="category-label">Study guides</span><h1>Study by topic</h1><p>Review lessons without leaving your student dashboard.</p></div><a href="/student-area">Back to dashboard</a></div> : <PageHero
         align="center"
         title="NCLEX Study Guide"
         text="A clear path from your first review session to exam day."
-      />
-      <section className="page-section">
+      />}
+      <section className={embedded ? 'embedded-guide-content' : 'page-section'}>
         <div className="quick-start">
           <h2>Quick Start Guide</h2>
           <div className="three-column">
@@ -160,9 +161,14 @@ export default function StudyGuidePage() {
                         <div className="topic-card-overlay">
                           <div className="topic-card-meta">
                             <span className="topic-percentage">{topic.distribution}% distribution</span>
-                            <span className="topic-question-count">
-                              {topic.question_count || 0} {topic.question_count === 1 ? 'question' : 'questions'}
-                            </span>
+                            {embedded ? (
+                              <span className="topic-question-count total-count">
+                                {topic.question_count || 0} {topic.question_count === 1 ? 'question' : 'questions'}
+                              </span>
+                            ) : <>
+                              <span className="topic-question-count free-count">{topic.free_question_count || 0} free</span>
+                              <a className="topic-question-count premium-count" href="/pricing" title="View Premium plan"><ActionIcon name="diamond" size={11} /> +{topic.premium_question_count || 0}<span className="sr-only"> premium questions</span></a>
+                            </>}
                           </div>
                           <h3>{topic.name}</h3>
                           <p>{topic.description}</p>
@@ -209,7 +215,7 @@ export default function StudyGuidePage() {
           </p>
         )}
       </section>
-      <section className="page-section muted-section">
+      <section className={embedded ? 'embedded-guide-strategies' : 'page-section muted-section'}>
         <div className="centered-heading">
           <span>Build a routine</span>
           <h2>Effective Study Strategies</h2>
@@ -223,6 +229,10 @@ export default function StudyGuidePage() {
           ))}
         </div>
       </section>
-    </PublicLayout>
+    </>
   );
+}
+
+export default function StudyGuidePage() {
+  return <PublicLayout><StudyGuideContent /></PublicLayout>
 }

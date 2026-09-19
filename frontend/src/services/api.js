@@ -228,3 +228,7 @@ export function getStudentHistory() {
 export function getStudentPerformance() {
   return request('/api/exam-sessions/performance', { tokenType: 'student' })
 }
+
+export function getQuestionAvailability() {
+  return request('/api/exam-sessions/availability', { tokenType: 'student' })
+}

@@ -1,7 +1,10 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+  throw new Error('JWT_SECRET must be set in .env and contain at least 32 characters');
+}
 const JWT_EXPIRES_IN = '24h';
 function generateToken(userId, username, role = 'admin') {
   return jwt.sign(
@@ -20,7 +23,7 @@ function generateStudentToken(studentId, email) {
 }
 function verifyToken(token) {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    return jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
   } catch (error) {
     return null;
   }

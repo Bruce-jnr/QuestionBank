@@ -2,68 +2,31 @@ const Admin = require('../models/Admin');
 const { generateToken, comparePassword } = require('../src/config/auth');
 async function login(req, res) {
   try {
-    let body = '';
-    req.on('data', chunk => {
-      body += chunk.toString();
-    });
-
-    req.on('end', async () => {
-      try {
-        const { username, password } = JSON.parse(body);
+        const { username, password } = req.body || {};
         if (!username || !password) {
-          res.writeHead(400, { 
-            'Content-Type': 'application/json'
-          });
-          return res.end(JSON.stringify({ 
-            error: 'Username and password are required' 
-          }));
+          return res.status(400).json({ error: 'Username and password are required' });
         }
         const user = await Admin.findByUsername(username);
 
         if (!user) {
-          res.writeHead(401, { 
-            'Content-Type': 'application/json'
-          });
-          return res.end(JSON.stringify({ 
-            error: 'Invalid username or password' 
-          }));
+          return res.status(401).json({ error: 'Invalid username or password' });
         }
         const isPasswordValid = await comparePassword(password, user.password);
         if (!isPasswordValid) {
-          res.writeHead(401, { 
-            'Content-Type': 'application/json'
-          });
-          return res.end(JSON.stringify({ 
-            error: 'Invalid username or password' 
-          }));
+          return res.status(401).json({ error: 'Invalid username or password' });
         }
         const token = generateToken(user.id, user.username, 'admin');
-        res.writeHead(200, { 
-          'Content-Type': 'application/json'
-        });
-        res.end(JSON.stringify({
+        return res.json({
           success: true,
           token,
           user: {
             id: user.id,
             username: user.username
           }
-        }));
-
-      } catch (parseError) {
-        res.writeHead(400, { 
-          'Content-Type': 'application/json'
         });
-        res.end(JSON.stringify({ error: 'Invalid request body' }));
-      }
-    });
-
   } catch (error) {
     console.error('Login error:', error);
-    res.writeHead(500, { 
-      'Content-Type': 'application/json'
-    });
-    res.end(JSON.stringify({ error: 'Internal server error' }));
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 function verifyToken(req, res) {
@@ -80,7 +43,7 @@ function verifyToken(req, res) {
   const { verifyToken } = require('../src/config/auth');
   const decoded = verifyToken(token);
 
-  if (!decoded || (decoded.role && decoded.role !== 'admin')) {
+  if (!decoded || decoded.role !== 'admin') {
     res.writeHead(403, { 
       'Content-Type': 'application/json'
     });

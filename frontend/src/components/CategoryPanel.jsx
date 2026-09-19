@@ -6,6 +6,7 @@ import {
   updateCategory,
 } from '../services/api';
 import ButtonLoader from './ButtonLoader';
+import ActionIcon from './ActionIcon';
 
 const clientNeeds = [
   ['', 'Select a Client Need'],
@@ -168,10 +169,13 @@ export default function CategoryPanel({ categoryType }) {
                   <td>
                     <div className="dashboard-actions">
                       <button
+                        aria-label={`Edit ${category.name}`}
+                        className="icon-button"
                         onClick={() => openEditor(category)}
+                        title="Edit"
                         type="button"
                       >
-                        Edit
+                        <ActionIcon name="edit" />
                       </button>
                       <button
                         aria-busy={deletingId === category.id}
@@ -179,12 +183,14 @@ export default function CategoryPanel({ categoryType }) {
                         disabled={deletingId !== null}
                         onClick={() => remove(category)}
                         type="button"
+                        aria-label={`Delete ${category.name}`}
+                        title="Delete"
                       >
                         <ButtonLoader
                           loading={deletingId === category.id}
                           loadingText="Deleting..."
                         >
-                          Delete
+                          <ActionIcon name="delete" />
                         </ButtonLoader>
                       </button>
                     </div>
@@ -218,11 +224,14 @@ export default function CategoryPanel({ categoryType }) {
                 </h2>
               </div>
               <button
+                aria-label="Close editor"
+                className="modal-close-button"
                 disabled={saving}
                 onClick={() => setShowEditor(false)}
+                title="Close"
                 type="button"
               >
-                Close
+                <ActionIcon name="close" />
               </button>
             </div>
             <label>

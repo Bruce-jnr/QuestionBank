@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ButtonLoader from './ButtonLoader';
+import ActionIcon from './ActionIcon';
 import {
   createCategory,
   createStudyDomain,
@@ -166,6 +167,8 @@ export default function StudyCurriculumPanel() {
                 </div>
                 <div className="dashboard-actions">
                   <button
+                    aria-label={`Edit ${domain.name}`}
+                    className="icon-button"
                     onClick={() =>
                       setEditor({
                         kind: 'domain',
@@ -179,15 +182,18 @@ export default function StudyCurriculumPanel() {
                       })
                     }
                     type="button"
+                    title="Edit domain"
                   >
-                    Edit
+                    <ActionIcon name="edit" />
                   </button>
                   <button
                     className="delete-action"
+                    aria-label={`Delete ${domain.name}`}
                     onClick={() => remove('domain', domain.id)}
                     type="button"
+                    title="Delete domain"
                   >
-                    Delete
+                    <ActionIcon name="delete" />
                   </button>
                 </div>
               </header>
@@ -201,6 +207,8 @@ export default function StudyCurriculumPanel() {
                         <p>{topic.description}</p>
                       </div>
                       <button
+                        aria-label={`Edit ${topic.name}`}
+                        className="icon-button"
                         onClick={() =>
                           setEditor({
                             kind: 'topic',
@@ -217,15 +225,18 @@ export default function StudyCurriculumPanel() {
                           })
                         }
                         type="button"
+                        title="Edit topic"
                       >
-                        Edit topic
+                        <ActionIcon name="edit" />
                       </button>
                       <button
                         className="delete-action"
+                        aria-label={`Delete ${topic.name}`}
                         onClick={() => remove('topic', topic.id)}
                         type="button"
+                        title="Delete topic"
                       >
-                        Delete
+                        <ActionIcon name="delete" />
                       </button>
                     </div>
                     <div className="module-list">
@@ -241,6 +252,8 @@ export default function StudyCurriculumPanel() {
                           </div>
                           <div className="dashboard-actions">
                             <button
+                              aria-label={`Edit ${module.title}`}
+                              className="icon-button"
                               onClick={() =>
                                 setEditor({
                                   kind: 'module',
@@ -258,15 +271,18 @@ export default function StudyCurriculumPanel() {
                                 })
                               }
                               type="button"
+                              title="Edit module"
                             >
-                              Edit
+                              <ActionIcon name="edit" />
                             </button>
                             <button
                               className="delete-action"
+                              aria-label={`Delete ${module.title}`}
                               onClick={() => remove('module', module.id)}
                               type="button"
+                              title="Delete module"
                             >
-                              Delete
+                              <ActionIcon name="delete" />
                             </button>
                           </div>
                         </div>
@@ -350,8 +366,8 @@ function CurriculumEditor({
               {editor.id ? 'Edit' : 'Add'} {editor.kind}
             </h2>
           </div>
-          <button disabled={saving} onClick={onClose} type="button">
-            Close
+          <button aria-label="Close curriculum editor" className="modal-close-button" disabled={saving} onClick={onClose} title="Close" type="button">
+            <ActionIcon name="close" />
           </button>
         </div>
         {editor.kind === 'domain' && (

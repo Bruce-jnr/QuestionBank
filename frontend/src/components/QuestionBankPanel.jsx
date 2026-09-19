@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import ButtonLoader from './ButtonLoader';
+import ActionIcon from './ActionIcon';
 import {
   archiveQuestion,
   createQuestion,
@@ -51,7 +52,10 @@ const emptyQuestion = {
   scoringMethod: 'ZERO_ONE',
   difficulty: 0.5,
   status: 'DRAFT',
+  accessTier: 'FREE',
 };
+
+const emptyFilters = { status: '', accessTier: '', questionType: '', clientNeed: '' };
 
 function apiQuestion(question) {
   return {
@@ -67,6 +71,7 @@ function apiQuestion(question) {
     scoringMethod: question.scoring_method,
     difficulty: question.difficulty,
     status: question.status,
+    accessTier: question.access_tier || 'FREE',
   };
 }
 
@@ -143,6 +148,7 @@ function normalizeImport(question) {
     scoringMethod: question.scoringMethod || 'ZERO_ONE',
     difficulty: Number(question.difficulty || 0.5),
     status: question.status || 'DRAFT',
+    accessTier: question.accessTier || 'FREE',
   };
   return normalized;
 }
@@ -151,6 +157,8 @@ export default function QuestionBankPanel() {
   const [questions, setQuestions] = useState([]);
   const [search, setSearch] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
+  const [filters, setFilters] = useState(emptyFilters);
+  const [appliedFilters, setAppliedFilters] = useState(emptyFilters);
   const [pagination, setPagination] = useState({
     page: 1,
     total: 0,
@@ -170,12 +178,16 @@ export default function QuestionBankPanel() {
   async function loadQuestions(
     page = 1,
     searchTerm = appliedSearch,
+    activeFilters = appliedFilters,
     action = '',
   ) {
     setLoading(true);
     setLoadingAction(action);
     const params = new URLSearchParams({ page: String(page), limit: '20' });
     if (searchTerm) params.set('search', searchTerm);
+    Object.entries(activeFilters).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+    });
     try {
       const data = await getQuestions(params.toString());
       setQuestions(data.questions || []);
@@ -214,7 +226,16 @@ export default function QuestionBankPanel() {
     event.preventDefault();
     const term = search.trim();
     setAppliedSearch(term);
-    loadQuestions(1, term, 'search');
+    setAppliedFilters(filters);
+    loadQuestions(1, term, filters, 'search');
+  }
+
+  function clearFilters() {
+    setSearch('');
+    setAppliedSearch('');
+    setFilters(emptyFilters);
+    setAppliedFilters(emptyFilters);
+    loadQuestions(1, '', emptyFilters, 'search');
   }
 
   function openEditor(question = null) {
@@ -276,7 +297,9 @@ export default function QuestionBankPanel() {
       );
       setAppliedSearch('');
       setSearch('');
-      await loadQuestions(1, '');
+      setFilters(emptyFilters);
+      setAppliedFilters(emptyFilters);
+      await loadQuestions(1, '', emptyFilters);
     } catch (importError) {
       setError(importError.message || 'Unable to import questions.');
     } finally {
@@ -304,9 +327,9 @@ export default function QuestionBankPanel() {
 
   function downloadTemplate() {
     const header =
-      'externalId,stem,prompt,options,correctAnswers,rationale,clientNeed,questionType,scoringMethod,difficulty,status\n';
+      'externalId,stem,prompt,options,correctAnswers,rationale,clientNeed,questionType,scoringMethod,difficulty,status,accessTier\n';
     const example =
-      'sample-001,"A nurse is caring for a client.","What should the nurse do first?","a:Assess the client|b:Call the provider",a,"Assessment comes before intervention.",MANAGEMENT_OF_CARE,MULTIPLE_CHOICE,ZERO_ONE,0.5,DRAFT\n';
+      'sample-001,"A nurse is caring for a client.","What should the nurse do first?","a:Assess the client|b:Call the provider",a,"Assessment comes before intervention.",MANAGEMENT_OF_CARE,MULTIPLE_CHOICE,ZERO_ONE,0.5,DRAFT,FREE\n';
     const link = document.createElement('a');
     link.href = URL.createObjectURL(
       new Blob([header + example], { type: 'text/csv' }),
@@ -362,28 +385,19 @@ export default function QuestionBankPanel() {
         <code>|</code> and option IDs from text with <code>:</code>.
       </p>
       <section className="dashboard-panel">
-        <form
-          className="dashboard-search question-search"
-          onSubmit={submitSearch}
-        >
-          <span>Search</span>
-          <input
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search questions..."
-            value={search}
-          />
-          <button
-            aria-busy={loadingAction === 'search'}
-            disabled={loading}
-            type="submit"
-          >
-            <ButtonLoader
-              loading={loadingAction === 'search'}
-              loadingText="Searching..."
-            >
-              Search
-            </ButtonLoader>
-          </button>
+        <form className="question-filter-bar" onSubmit={submitSearch}>
+          <label className="question-filter-search">
+            <span>Search questions</span>
+            <input onChange={(event) => setSearch(event.target.value)} placeholder="ID, stem, or prompt..." value={search} />
+          </label>
+          <label><span>Status</span><select value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}><option value="">All statuses</option><option value="DRAFT">Draft</option><option value="PUBLISHED">Published</option><option value="ARCHIVED">Archived</option></select></label>
+          <label><span>Access</span><select value={filters.accessTier} onChange={(event) => setFilters({ ...filters, accessTier: event.target.value })}><option value="">All access</option><option value="FREE">Free</option><option value="PREMIUM">Premium</option></select></label>
+          <label><span>Question type</span><select value={filters.questionType} onChange={(event) => setFilters({ ...filters, questionType: event.target.value })}><option value="">All types</option>{questionTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          <label><span>Client need</span><select value={filters.clientNeed} onChange={(event) => setFilters({ ...filters, clientNeed: event.target.value })}><option value="">All client needs</option>{clientNeeds.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          <div className="question-filter-actions">
+            <button aria-busy={loadingAction === 'search'} disabled={loading} type="submit"><ButtonLoader loading={loadingAction === 'search'} loadingText="Filtering...">Apply filters</ButtonLoader></button>
+            <button className="secondary-button" disabled={loading} onClick={clearFilters} type="button">Clear</button>
+          </div>
         </form>
         <div className="dashboard-table-wrap">
           <table className="dashboard-table question-table">
@@ -393,6 +407,7 @@ export default function QuestionBankPanel() {
                 <th>Category</th>
                 <th>Type</th>
                 <th>Status</th>
+                <th>Access</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -414,13 +429,17 @@ export default function QuestionBankPanel() {
                       {question.status}
                     </span>
                   </td>
+                  <td><span className={`access-tier ${question.access_tier === 'PREMIUM' ? 'premium' : 'free'}`}>{question.access_tier === 'PREMIUM' && <ActionIcon name="diamond" size={12} />}{question.access_tier === 'PREMIUM' ? 'Premium' : 'Free'}</span></td>
                   <td>
                     <div className="dashboard-actions">
                       <button
+                        aria-label="Edit question"
+                        className="icon-button"
                         onClick={() => openEditor(question)}
+                        title="Edit question"
                         type="button"
                       >
-                        Edit
+                        <ActionIcon name="edit" />
                       </button>
                       <button
                         className="delete-action"
@@ -429,13 +448,15 @@ export default function QuestionBankPanel() {
                           question.status === 'ARCHIVED' || archivingId !== null
                         }
                         onClick={() => archive(question)}
+                        aria-label="Archive question"
+                        title="Archive question"
                         type="button"
                       >
                         <ButtonLoader
                           loading={archivingId === question.id}
                           loadingText="Archiving..."
                         >
-                          Archive
+                          <ActionIcon name="archive" />
                         </ButtonLoader>
                       </button>
                     </div>
@@ -455,7 +476,7 @@ export default function QuestionBankPanel() {
             aria-busy={loadingAction === 'previous'}
             disabled={loading || pagination.page <= 1}
             onClick={() =>
-              loadQuestions(pagination.page - 1, appliedSearch, 'previous')
+              loadQuestions(pagination.page - 1, appliedSearch, appliedFilters, 'previous')
             }
             type="button"
           >
@@ -474,7 +495,7 @@ export default function QuestionBankPanel() {
             aria-busy={loadingAction === 'next'}
             disabled={loading || pagination.page >= pagination.totalPages}
             onClick={() =>
-              loadQuestions(pagination.page + 1, appliedSearch, 'next')
+              loadQuestions(pagination.page + 1, appliedSearch, appliedFilters, 'next')
             }
             type="button"
           >
@@ -522,8 +543,8 @@ function QuestionEditor({ editing, form, onClose, onSave, saving, setForm }) {
             <span className="category-label">Question editor</span>
             <h2>{editing ? 'Edit Question' : 'Add Question'}</h2>
           </div>
-          <button disabled={saving} onClick={onClose} type="button">
-            Close
+          <button aria-label="Close question editor" className="modal-close-button" disabled={saving} onClick={onClose} title="Close" type="button">
+            <ActionIcon name="close" />
           </button>
         </div>
         <div className="question-form-grid">
@@ -602,6 +623,16 @@ function QuestionEditor({ editing, form, onClose, onSave, saving, setForm }) {
             </select>
           </label>
           <label>
+            Access
+            <select
+              value={form.accessTier}
+              onChange={(event) => setField('accessTier', event.target.value)}
+            >
+              <option value="FREE">Free</option>
+              <option value="PREMIUM">Premium</option>
+            </select>
+          </label>
+          <label>
             Difficulty (0–1)
             <input
               max="1"
@@ -646,6 +677,8 @@ function QuestionEditor({ editing, form, onClose, onSave, saving, setForm }) {
                 />
               )}
               <button
+                aria-label={`Remove option ${index + 1}`}
+                className="icon-button delete-action"
                 disabled={form.options.length <= 2}
                 onClick={() =>
                   setField(
@@ -656,8 +689,9 @@ function QuestionEditor({ editing, form, onClose, onSave, saving, setForm }) {
                   )
                 }
                 type="button"
+                title="Remove option"
               >
-                Remove
+                <ActionIcon name="delete" />
               </button>
             </div>
           ))}

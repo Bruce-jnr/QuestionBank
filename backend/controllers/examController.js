@@ -76,6 +76,7 @@ function sessionPayload(session) {
     isCompleted: session.is_completed,
     score: session.score,
     maxScore: session.max_score,
+    timeSpentSec: session.time_spent_sec,
     questionCount: session.question_count,
     createdAt: session.created_at,
     completedAt: session.completed_at,
@@ -90,6 +91,7 @@ function sessionPayload(session) {
           isCorrect: reveal ? answer.is_correct : undefined,
           pointsEarned: reveal ? answer.points_earned : undefined,
           pointsPossible: reveal ? answer.points_possible : undefined,
+          timeSpentSec: answer.time_spent_sec,
         } : null,
       };
     }),
@@ -100,12 +102,21 @@ async function startSession(req, res) {
   const result = startSchema.safeParse(req.body);
   if (!result.success) return validationError(res, result);
 
-  const where = {
-    status: 'PUBLISHED',
-    ...(result.data.clientNeed ? { client_need: result.data.clientNeed } : {}),
-  };
-
   try {
+    const student = await prisma.student.findUnique({
+      where: { id: req.user.userId },
+      select: { access_tier: true, premium_until: true, status: true },
+    });
+    if (!student || student.status !== 'ACTIVE') {
+      return res.status(403).json({ error: 'Student account is unavailable' });
+    }
+    const hasPremium = student.access_tier === 'PREMIUM'
+      && (!student.premium_until || student.premium_until > new Date());
+    const where = {
+      status: 'PUBLISHED',
+      ...(!hasPremium ? { access_tier: 'FREE' } : {}),
+      ...(result.data.clientNeed ? { client_need: result.data.clientNeed } : {}),
+    };
     const available = await prisma.question.findMany({ where, select: { id: true } });
     const selected = shuffle(available).slice(0, result.data.questionCount);
     if (!selected.length) {
@@ -288,7 +299,7 @@ async function getPerformance(req, res) {
     const [answers, completedSessions] = await Promise.all([
       prisma.userAnswer.findMany({
         where: { student_id: req.user.userId },
-        select: { points_earned: true, points_possible: true },
+        select: { points_earned: true, points_possible: true, time_spent_sec: true, question: { select: { client_need: true } } },
       }),
       prisma.examSession.count({
         where: { student_id: req.user.userId, is_completed: true },
@@ -296,11 +307,26 @@ async function getPerformance(req, res) {
     ]);
     const pointsEarned = answers.reduce((sum, answer) => sum + answer.points_earned, 0);
     const pointsPossible = answers.reduce((sum, answer) => sum + answer.points_possible, 0);
+    const categoryMap = new Map();
+    answers.forEach((answer) => {
+      const key = answer.question.client_need;
+      const current = categoryMap.get(key) || { answered: 0, earned: 0, possible: 0 };
+      current.answered += 1;
+      current.earned += answer.points_earned;
+      current.possible += answer.points_possible;
+      categoryMap.set(key, current);
+    });
     return res.json({
       performance: {
         questionsAnswered: answers.length,
         completedSessions,
         accuracy: pointsPossible ? Math.round((pointsEarned / pointsPossible) * 100) : 0,
+        timeSpentSec: answers.reduce((sum, answer) => sum + answer.time_spent_sec, 0),
+        categories: [...categoryMap.entries()].map(([clientNeed, values]) => ({
+          clientNeed,
+          answered: values.answered,
+          accuracy: values.possible ? Math.round((values.earned / values.possible) * 100) : 0,
+        })),
       },
     });
   } catch (error) {
@@ -309,9 +335,41 @@ async function getPerformance(req, res) {
   }
 }
 
+async function getAvailability(req, res) {
+  try {
+    const student = await prisma.student.findUnique({
+      where: { id: req.user.userId },
+      select: { access_tier: true, premium_until: true, status: true },
+    });
+    if (!student || student.status !== 'ACTIVE') return res.status(403).json({ error: 'Student account is unavailable' });
+    const hasPremium = student.access_tier === 'PREMIUM'
+      && (!student.premium_until || student.premium_until > new Date());
+    const groups = await prisma.question.groupBy({
+      by: ['client_need', 'access_tier'],
+      where: { status: 'PUBLISHED' },
+      _count: { id: true },
+    });
+    const summarize = (clientNeed = null) => {
+      const matching = clientNeed ? groups.filter((group) => group.client_need === clientNeed) : groups;
+      const free = matching.filter((group) => group.access_tier === 'FREE').reduce((sum, group) => sum + group._count.id, 0);
+      const premium = matching.filter((group) => group.access_tier === 'PREMIUM').reduce((sum, group) => sum + group._count.id, 0);
+      return { free, premium, total: free + premium, available: hasPremium ? free + premium : free, locked: hasPremium ? 0 : premium };
+    };
+    return res.json({
+      accessTier: hasPremium ? 'PREMIUM' : 'FREE',
+      mixed: summarize(),
+      topics: Object.fromEntries(clientNeeds.map((clientNeed) => [clientNeed, summarize(clientNeed)])),
+    });
+  } catch (error) {
+    console.error('Question availability error:', error);
+    return res.status(500).json({ error: 'Unable to load question availability' });
+  }
+}
+
 module.exports = {
   finalizeSession,
   getHistory,
+  getAvailability,
   getPerformance,
   getSession,
   startSession,

@@ -4,6 +4,7 @@ import CategoryPanel from '../components/CategoryPanel';
 import QuestionBankPanel from '../components/QuestionBankPanel';
 import StudyCurriculumPanel from '../components/StudyCurriculumPanel';
 import ButtonLoader from '../components/ButtonLoader';
+import ActionIcon from '../components/ActionIcon';
 import {
   createPost,
   createStudent as createStudentAccount,
@@ -13,6 +14,7 @@ import {
   getAdminCategories,
   getStudents,
   resetStudentPassword,
+  updateStudent,
   uploadImage,
   verifySession,
 } from '../services/api';
@@ -23,6 +25,7 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [activePanel, setActivePanel] = useState('posts');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [students, setStudents] = useState([]);
   const [creatingStudent, setCreatingStudent] = useState(false);
@@ -30,6 +33,8 @@ export default function DashboardPage() {
     name: '',
     email: '',
     password: '',
+    accessTier: 'FREE',
+    premiumUntil: '',
   });
 
   async function loadPosts() {
@@ -63,6 +68,24 @@ export default function DashboardPage() {
       });
   }, []);
 
+  useEffect(() => {
+    if (!sidebarOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setSidebarOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    document.body.classList.add('offcanvas-open');
+    return () => {
+      document.removeEventListener('keydown', closeOnEscape);
+      document.body.classList.remove('offcanvas-open');
+    };
+  }, [sidebarOpen]);
+
+  function selectPanel(panel) {
+    setActivePanel(panel);
+    setSidebarOpen(false);
+  }
+
   function logout() {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
@@ -74,9 +97,14 @@ export default function DashboardPage() {
     setCreatingStudent(true);
     setError('');
     try {
-      await createStudentAccount(studentForm);
+      await createStudentAccount({
+        ...studentForm,
+        premiumUntil: studentForm.accessTier === 'PREMIUM' && studentForm.premiumUntil
+          ? new Date(`${studentForm.premiumUntil}T23:59:59.999Z`).toISOString()
+          : null,
+      });
       await loadStudents();
-      setStudentForm({ name: '', email: '', password: '' });
+      setStudentForm({ name: '', email: '', password: '', accessTier: 'FREE', premiumUntil: '' });
       setShowCreateUser(false);
     } catch (requestError) {
       setError(requestError.message);
@@ -95,8 +123,11 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard">
-      <aside className="dashboard-sidebar">
+      <aside className={`dashboard-sidebar ${sidebarOpen ? 'is-open' : ''}`} id="admin-sidebar">
         <div>
+          <button className="offcanvas-close" onClick={() => setSidebarOpen(false)} type="button" aria-label="Close admin menu">
+            <ActionIcon name="close" />
+          </button>
           <a className="dashboard-identity" href="/">
             <LogoMark />
             <span>
@@ -105,26 +136,26 @@ export default function DashboardPage() {
             </span>
           </a>
           <nav className="dashboard-nav">
-            <button type="button">Dashboard</button>
+            <button onClick={() => selectPanel('posts')} type="button">Dashboard</button>
             <button
               className={activePanel === 'posts' ? 'active' : ''}
-              onClick={() => setActivePanel('posts')}
+              onClick={() => selectPanel('posts')}
               type="button"
             >
               Posts
             </button>
-            <button className={activePanel === 'categories' ? 'active' : ''} onClick={() => setActivePanel('categories')} type="button">Categories</button>
-            <button className={activePanel === 'study-topics' ? 'active' : ''} onClick={() => setActivePanel('study-topics')} type="button">Study Topics</button>
+            <button className={activePanel === 'categories' ? 'active' : ''} onClick={() => selectPanel('categories')} type="button">Categories</button>
+            <button className={activePanel === 'study-topics' ? 'active' : ''} onClick={() => selectPanel('study-topics')} type="button">Study Topics</button>
             <button
               className={activePanel === 'questions' ? 'active' : ''}
-              onClick={() => setActivePanel('questions')}
+              onClick={() => selectPanel('questions')}
               type="button"
             >
               Questions
             </button>
             <button
               className={activePanel === 'users' ? 'active' : ''}
-              onClick={() => setActivePanel('users')}
+              onClick={() => selectPanel('users')}
               type="button"
             >
               Users
@@ -139,7 +170,27 @@ export default function DashboardPage() {
           </button>
         </div>
       </aside>
+      <button
+        aria-label="Close admin menu"
+        className={`offcanvas-backdrop ${sidebarOpen ? 'is-visible' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+        tabIndex={sidebarOpen ? 0 : -1}
+        type="button"
+      />
       <main className="dashboard-content">
+        <div className="dashboard-mobile-header">
+          <button
+            aria-controls="admin-sidebar"
+            aria-expanded={sidebarOpen}
+            className="offcanvas-toggle"
+            onClick={() => setSidebarOpen(true)}
+            type="button"
+          >
+            <span className="offcanvas-menu-icon" aria-hidden="true"><i /><i /><i /></span>
+            Menu
+          </button>
+          <strong>Admin Panel</strong>
+        </div>
         <div className="dashboard-content-inner">
           {activePanel === 'posts' ? (
             <PostsPanel
@@ -265,8 +316,8 @@ function PostsPanel({ error, filteredPosts, loadPosts, search, setSearch }) {
                   </td>
                   <td>
                     <div className="dashboard-actions">
-                      <button title="Edit post" type="button">
-                        Edit
+                      <button aria-label={`Edit ${post.title}`} className="icon-button" title="Edit post" type="button">
+                        <ActionIcon name="edit" />
                       </button>
                       <button
                         aria-busy={deletingPostId === post.id}
@@ -286,7 +337,7 @@ function PostsPanel({ error, filteredPosts, loadPosts, search, setSearch }) {
                         title="Delete post"
                         type="button"
                       >
-                        <ButtonLoader loading={deletingPostId === post.id} loadingText="Deleting...">Delete</ButtonLoader>
+                        <ButtonLoader loading={deletingPostId === post.id} loadingText="Deleting..."><ActionIcon name="delete" /></ButtonLoader>
                       </button>
                     </div>
                   </td>
@@ -337,7 +388,7 @@ function PostEditor({ categories, error, form, onClose, onSubmit, saving, setFor
       <form className="admin-modal post-editor" onSubmit={onSubmit}>
         <div className="modal-heading">
           <div><span className="category-label">Blog post</span><h2>Add New Post</h2></div>
-          <button disabled={saving} onClick={onClose} type="button">Close</button>
+          <button aria-label="Close post editor" className="modal-close-button" disabled={saving} onClick={onClose} title="Close" type="button"><ActionIcon name="close" /></button>
         </div>
         {error && <p className="error-text">{error}</p>}
         <div className="post-form-grid">
@@ -399,6 +450,19 @@ function UsersPanel({
     }
   }
 
+  async function changeAccess(student) {
+    const nextTier = student.accessTier === 'PREMIUM' ? 'FREE' : 'PREMIUM';
+    setStudentAction({ type: 'access', id: student.id });
+    try {
+      await updateStudent(student.id, { accessTier: nextTier, premiumUntil: null });
+      await loadStudents();
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setStudentAction({ type: '', id: null });
+    }
+  }
+
   return (
     <>
       <div className="dashboard-heading">
@@ -424,8 +488,8 @@ function UsersPanel({
             </strong>
           </div>
           <div>
-            <span>Question bank access</span>
-            <strong>{students.length}</strong>
+            <span>Premium students</span>
+            <strong>{students.filter((student) => student.accessTier === 'PREMIUM').length}</strong>
           </div>
         </div>
         <div className="dashboard-table-wrap">
@@ -436,6 +500,7 @@ function UsersPanel({
                 <th>Email</th>
                 <th>Created</th>
                 <th>Status</th>
+                <th>Plan</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -463,8 +528,17 @@ function UsersPanel({
                       {student.status === 'ACTIVE' ? 'Active' : 'Disabled'}
                     </span>
                   </td>
+                  <td><span className={`access-tier ${student.accessTier === 'PREMIUM' ? 'premium' : 'free'}`}>{student.accessTier === 'PREMIUM' && <ActionIcon name="diamond" size={12} />}{student.accessTier === 'PREMIUM' ? 'Premium' : 'Free'}</span>{student.premiumUntil && <small className="access-expiry">Until {formatDate(student.premiumUntil)}</small>}</td>
                   <td>
                     <div className="dashboard-actions">
+                      <button
+                        aria-busy={studentAction.type === 'access' && studentAction.id === student.id}
+                        disabled={studentAction.id !== null}
+                        onClick={() => changeAccess(student)}
+                        type="button"
+                      >
+                        <ButtonLoader loading={studentAction.type === 'access' && studentAction.id === student.id} loadingText="Updating...">{student.accessTier === 'PREMIUM' ? 'Set free' : 'Make premium'}</ButtonLoader>
+                      </button>
                       <button
                         aria-busy={studentAction.type === 'reset' && studentAction.id === student.id}
                         disabled={studentAction.id !== null}
@@ -478,9 +552,11 @@ function UsersPanel({
                         className="delete-action"
                         disabled={studentAction.id !== null}
                         onClick={() => removeStudent(student)}
+                        aria-label={`Remove ${student.name}`}
+                        title="Remove student"
                         type="button"
                       >
-                        <ButtonLoader loading={studentAction.type === 'remove' && studentAction.id === student.id} loadingText="Removing...">Remove</ButtonLoader>
+                        <ButtonLoader loading={studentAction.type === 'remove' && studentAction.id === student.id} loadingText="Removing..."><ActionIcon name="delete" /></ButtonLoader>
                       </button>
                     </div>
                   </td>
@@ -518,8 +594,8 @@ function CreateStudentModal({
             <span className="category-label">Student account</span>
             <h2>Add New Student</h2>
           </div>
-          <button disabled={creatingStudent} onClick={() => setShowCreateUser(false)} type="button">
-            Close
+          <button aria-label="Close student editor" className="modal-close-button" disabled={creatingStudent} onClick={() => setShowCreateUser(false)} title="Close" type="button">
+            <ActionIcon name="close" />
           </button>
         </div>
         <label>
@@ -558,6 +634,25 @@ function CreateStudentModal({
             placeholder="Minimum 8 characters"
           />
         </label>
+        <label>
+          Access tier
+          <select
+            value={studentForm.accessTier}
+            onChange={(event) => setStudentForm({ ...studentForm, accessTier: event.target.value, premiumUntil: event.target.value === 'FREE' ? '' : studentForm.premiumUntil })}
+          >
+            <option value="FREE">Free</option>
+            <option value="PREMIUM">Premium</option>
+          </select>
+        </label>
+        {studentForm.accessTier === 'PREMIUM' && <label>
+          Premium end date <span>Optional</span>
+          <input
+            min={new Date().toISOString().split('T')[0]}
+            type="date"
+            value={studentForm.premiumUntil}
+            onChange={(event) => setStudentForm({ ...studentForm, premiumUntil: event.target.value })}
+          />
+        </label>}
         <p>
           The student will use these credentials to access the Question Bank.
         </p>

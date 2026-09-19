@@ -10,12 +10,16 @@ const createStudentSchema = z.object({
   name: z.string().trim().min(2).max(255),
   email: z.string().trim().email().max(255),
   password: z.string().min(8).max(128),
+  accessTier: z.enum(['FREE', 'PREMIUM']).default('FREE'),
+  premiumUntil: z.string().datetime().nullable().optional(),
 });
 
 const updateStudentSchema = z.object({
   name: z.string().trim().min(2).max(255).optional(),
   email: z.string().trim().email().max(255).optional(),
   status: z.enum(['ACTIVE', 'DISABLED']).optional(),
+  accessTier: z.enum(['FREE', 'PREMIUM']).optional(),
+  premiumUntil: z.string().datetime().nullable().optional(),
 }).refine((data) => Object.keys(data).length > 0, 'At least one field is required');
 
 const passwordSchema = z.object({ password: z.string().min(8).max(128) });
@@ -31,12 +35,17 @@ function validationError(res, result) {
 }
 
 function publicStudent(student) {
+  const premiumActive = student.access_tier === 'PREMIUM'
+    && (!student.premium_until || student.premium_until > new Date());
   return {
     id: student.id,
     name: student.full_name,
     email: student.email,
     status: student.status,
     mustChangePassword: student.must_change_password,
+    accessTier: premiumActive ? 'PREMIUM' : 'FREE',
+    configuredAccessTier: student.access_tier,
+    premiumUntil: student.premium_until,
     created_at: student.created_at,
     updated_at: student.updated_at,
     sessionCount: student._count?.exam_sessions,
@@ -106,6 +115,10 @@ async function createStudent(req, res) {
         full_name: result.data.name,
         email: result.data.email.toLowerCase(),
         password: await hashPassword(result.data.password),
+        access_tier: result.data.accessTier,
+        premium_until: result.data.accessTier === 'PREMIUM' && result.data.premiumUntil
+          ? new Date(result.data.premiumUntil)
+          : null,
         created_by: req.user.userId,
       },
     });
@@ -130,6 +143,11 @@ async function updateStudent(req, res) {
         ...(result.data.name ? { full_name: result.data.name } : {}),
         ...(result.data.email ? { email: result.data.email.toLowerCase() } : {}),
         ...(result.data.status ? { status: result.data.status } : {}),
+        ...(result.data.accessTier ? { access_tier: result.data.accessTier } : {}),
+        ...(result.data.premiumUntil !== undefined
+          ? { premium_until: result.data.premiumUntil ? new Date(result.data.premiumUntil) : null }
+          : {}),
+        ...(result.data.accessTier === 'FREE' ? { premium_until: null } : {}),
       },
     });
     return res.json({ student: publicStudent(student) });

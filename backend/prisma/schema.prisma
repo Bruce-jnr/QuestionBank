@@ -70,6 +70,18 @@ enum ExamMode {
   TEST
 }
 
+enum AccessTier {
+  FREE
+  PREMIUM
+}
+
+enum VideoStatus {
+  PROCESSING
+  DRAFT
+  PUBLISHED
+  FAILED
+}
+
 model Admin {
   id         Int        @id @default(autoincrement())
   username   String     @unique @db.VarChar(255)
@@ -91,6 +103,8 @@ model Student {
   password             String        @db.VarChar(255)
   status               StudentStatus @default(ACTIVE)
   must_change_password Boolean       @default(true)
+  access_tier          AccessTier    @default(FREE)
+  premium_until        DateTime?     @db.Timestamp(6)
   created_by           Int?
   created_at           DateTime      @default(now()) @db.Timestamp(6)
   updated_at           DateTime      @updatedAt @db.Timestamp(6)
@@ -116,6 +130,7 @@ model Question {
   scoring_method    ScoringMethod
   difficulty        Float                 @default(0.5)
   status            QuestionStatus        @default(DRAFT)
+  access_tier       AccessTier            @default(FREE)
   created_by        Int?
   created_at        DateTime              @default(now()) @db.Timestamp(6)
   updated_at        DateTime              @updatedAt @db.Timestamp(6)
@@ -123,7 +138,7 @@ model Question {
   session_questions ExamSessionQuestion[]
   answers           UserAnswer[]
 
-  @@index([client_need, question_type, status])
+  @@index([client_need, question_type, status, access_tier])
   @@map("questions")
 }
 
@@ -218,8 +233,30 @@ model Category {
   created_at    DateTime            @default(now()) @db.Timestamp(6)
   domain        StudyDomain?        @relation(fields: [domain_id], references: [id], onDelete: SetNull)
   modules       StudyModule[]
+  videos        Video[]
 
   @@map("categories")
+}
+
+model Video {
+  id               String      @id @default(uuid()) @db.Uuid
+  title            String      @db.VarChar(255)
+  description      String?     @db.Text
+  topic_id         Int?
+  zoom_meeting_id  String?     @db.VarChar(100)
+  s3_key           String?     @unique @db.VarChar(500)
+  thumbnail_s3_key String?     @db.VarChar(500)
+  duration_seconds Int?
+  access_tier      AccessTier  @default(PREMIUM)
+  status           VideoStatus @default(PROCESSING)
+  published_at     DateTime?   @db.Timestamp(6)
+  created_at       DateTime    @default(now()) @db.Timestamp(6)
+  updated_at       DateTime    @updatedAt @db.Timestamp(6)
+  topic            Category?   @relation(fields: [topic_id], references: [id], onDelete: SetNull)
+
+  @@index([status, access_tier])
+  @@index([topic_id])
+  @@map("videos")
 }
 
 model StudyDomain {

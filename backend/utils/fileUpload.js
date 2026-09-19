@@ -4,13 +4,23 @@ const crypto = require('crypto');
 
 const UPLOAD_DIR = path.join(__dirname, '../public/uploads');
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+const MAX_REQUEST_SIZE = MAX_FILE_SIZE + 256 * 1024;
+
+function detectImageType(buffer) {
+  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return { extension: '.jpg', mimeType: 'image/jpeg' };
+  if (buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return { extension: '.png', mimeType: 'image/png' };
+  if (buffer.length >= 6 && ['GIF87a', 'GIF89a'].includes(buffer.subarray(0, 6).toString('ascii'))) return { extension: '.gif', mimeType: 'image/gif' };
+  if (buffer.length >= 12 && buffer.subarray(0, 4).toString('ascii') === 'RIFF' && buffer.subarray(8, 12).toString('ascii') === 'WEBP') return { extension: '.webp', mimeType: 'image/webp' };
+  return null;
+}
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
 function parseMultipartFormData(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
+    let receivedBytes = 0;
+    let rejected = false;
     let boundary = null;
     let contentType = req.headers['content-type'];
 
@@ -24,10 +34,21 @@ function parseMultipartFormData(req) {
     boundary = boundaryMatch[1].trim();
 
     req.on('data', (chunk) => {
+      if (rejected) return;
+      receivedBytes += chunk.length;
+      if (receivedBytes > MAX_REQUEST_SIZE) {
+        rejected = true;
+        chunks.length = 0;
+        const error = new Error('Upload request exceeds the 5MB limit');
+        error.statusCode = 413;
+        reject(error);
+        return;
+      }
       chunks.push(chunk);
     });
 
     req.on('end', () => {
+      if (rejected) return;
       try {
         const buffer = Buffer.concat(chunks);
         const fields = {};
@@ -64,19 +85,20 @@ function parseMultipartFormData(req) {
 
           const fieldName = nameMatch[1];
           const filenameMatch = headers.match(/filename="([^"]+)"/);
-          const contentTypeMatch = headers.match(/Content-Type:\s*([^\r\n]+)/i);
-
           if (filenameMatch) {
             const filename = filenameMatch[1];
-            const mimeType = contentTypeMatch ? contentTypeMatch[1].trim() : 'application/octet-stream';
-            if (!ALLOWED_TYPES.includes(mimeType.toLowerCase())) {
-              return reject(new Error(`File type ${mimeType} not allowed. Allowed types: ${ALLOWED_TYPES.join(', ')}`));
-            }
             if (cleanBody.length > MAX_FILE_SIZE) {
-              return reject(new Error(`File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`));
+              const error = new Error(`File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`);
+              error.statusCode = 413;
+              return reject(error);
             }
-            const ext = path.extname(filename) || '.jpg';
-            const uniqueName = `${crypto.randomBytes(16).toString('hex')}${ext}`;
+            const detectedType = detectImageType(cleanBody);
+            if (!detectedType) {
+              const error = new Error('File contents are not a supported JPEG, PNG, GIF, or WebP image');
+              error.statusCode = 415;
+              return reject(error);
+            }
+            const uniqueName = `${crypto.randomBytes(16).toString('hex')}${detectedType.extension}`;
             const filePath = path.join(UPLOAD_DIR, uniqueName);
             fs.writeFileSync(filePath, cleanBody);
 
@@ -85,7 +107,7 @@ function parseMultipartFormData(req) {
               originalName: filename,
               path: `/uploads/${uniqueName}`,
               size: cleanBody.length,
-              mimetype: mimeType
+              mimetype: detectedType.mimeType
             };
           } else {
             const value = cleanBody.toString('utf8').trim();

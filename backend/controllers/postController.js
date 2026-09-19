@@ -75,7 +75,7 @@ async function createPost(req, res) {
 
     const { verifyToken } = require('../src/config/auth');
     const decoded = verifyToken(token);
-    if (!decoded || (decoded.role && decoded.role !== 'admin')) {
+    if (!decoded || decoded.role !== 'admin') {
       return sendJSON(res, 403, { error: 'Invalid or expired token' });
     }
 
@@ -128,7 +128,7 @@ async function updatePost(req, res) {
 
     const { verifyToken } = require('../src/config/auth');
     const decoded = verifyToken(token);
-    if (!decoded || (decoded.role && decoded.role !== 'admin')) {
+    if (!decoded || decoded.role !== 'admin') {
       return sendJSON(res, 403, { error: 'Invalid or expired token' });
     }
 
@@ -176,7 +176,7 @@ async function deletePost(req, res) {
 
     const { verifyToken } = require('../src/config/auth');
     const decoded = verifyToken(token);
-    if (!decoded || (decoded.role && decoded.role !== 'admin')) {
+    if (!decoded || decoded.role !== 'admin') {
       return sendJSON(res, 403, { error: 'Invalid or expired token' });
     }
 

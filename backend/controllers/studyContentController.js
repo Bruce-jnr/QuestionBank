@@ -36,20 +36,23 @@ async function publicStudyGuide(req, res) {
         },
       }),
       prisma.question.groupBy({
-        by: ['client_need'],
+        by: ['client_need', 'access_tier'],
         where: { status: 'PUBLISHED' },
         _count: { id: true },
       }),
     ]);
     const questionCounts = new Map(
-      questionGroups.map((group) => [group.client_need, group._count.id]),
+      questionGroups.map((group) => [`${group.client_need}:${group.access_tier}`, group._count.id]),
     );
     return res.json({
       domains: domains.map((domain) => ({
         ...domain,
         topics: domain.topics.map((topic) => ({
           ...topic,
-          question_count: questionCounts.get(topic.client_need) || 0,
+          free_question_count: questionCounts.get(`${topic.client_need}:FREE`) || 0,
+          premium_question_count: questionCounts.get(`${topic.client_need}:PREMIUM`) || 0,
+          question_count: (questionCounts.get(`${topic.client_need}:FREE`) || 0)
+            + (questionCounts.get(`${topic.client_need}:PREMIUM`) || 0),
         })),
       })),
     });

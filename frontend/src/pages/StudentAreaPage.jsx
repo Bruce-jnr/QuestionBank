@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import LogoMark from '../components/LogoMark';
 import ButtonLoader from '../components/ButtonLoader';
+import ActionIcon from '../components/ActionIcon';
+import { StudyGuideContent } from './StudyGuidePage';
 import {
   getStudyTopics,
+  getQuestionAvailability,
   getStudentHistory,
   getStudentPerformance,
   startExamSession,
@@ -36,22 +39,27 @@ function displayTopic(value) {
 }
 
 export default function StudentAreaPage() {
+  const activeView = new URLSearchParams(window.location.search).get('view') || 'dashboard';
+  const showingStudyGuides = activeView === 'study-guides';
   const [diagnostic] = useState(readDiagnosticResult);
   const [student, setStudent] = useState(readStudent);
   const [performance, setPerformance] = useState({
     questionsAnswered: 0,
     completedSessions: 0,
     accuracy: 0,
+    categories: [],
   });
   const [history, setHistory] = useState([]);
   const [studyTopics, setStudyTopics] = useState([]);
+  const [availability, setAvailability] = useState(null);
   const [selectedMode, setSelectedMode] = useState('practice');
   const [topic, setTopic] = useState(
-    diagnostic?.focusCategories?.[0] || 'Mixed Topics',
+    new URLSearchParams(window.location.search).get('topic') || diagnostic?.focusCategories?.[0] || 'Mixed Topics',
   );
   const [questionCount, setQuestionCount] = useState('10');
   const [error, setError] = useState('');
   const [starting, setStarting] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!localStorage.getItem('studentToken')) {
@@ -64,12 +72,14 @@ export default function StudentAreaPage() {
       getStudentPerformance(),
       getStudentHistory(),
       getStudyTopics(),
+      getQuestionAvailability(),
     ])
-      .then(([sessionData, performanceData, historyData, categoryData]) => {
+      .then(([sessionData, performanceData, historyData, categoryData, availabilityData]) => {
         setStudent(sessionData.student);
         setPerformance(performanceData.performance);
         setHistory(historyData.sessions || []);
         setStudyTopics(categoryData.categories || []);
+        setAvailability(availabilityData);
         localStorage.setItem('student', JSON.stringify(sessionData.student));
       })
       .catch(() => {
@@ -79,6 +89,19 @@ export default function StudentAreaPage() {
       });
   }, []);
 
+  useEffect(() => {
+    if (!sidebarOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setSidebarOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    document.body.classList.add('offcanvas-open');
+    return () => {
+      document.removeEventListener('keydown', closeOnEscape);
+      document.body.classList.remove('offcanvas-open');
+    };
+  }, [sidebarOpen]);
+
   async function startSession() {
     setError('');
     setStarting(true);
@@ -86,7 +109,7 @@ export default function StudentAreaPage() {
       const data = await startExamSession({
         mode: selectedMode.toUpperCase(),
         clientNeed: studyTopics.find((category) => category.name === topic)?.client_need || null,
-        questionCount: Number(questionCount),
+        questionCount: Number(effectiveQuestionCount),
       });
       window.location.assign(`/study-session?id=${data.session.id}`);
     } catch (requestError) {
@@ -107,11 +130,21 @@ export default function StudentAreaPage() {
     .join('')
     .slice(0, 2)
     .toUpperCase();
+  const selectedClientNeed = studyTopics.find((category) => category.name === topic)?.client_need;
+  const selectedAvailability = selectedClientNeed ? availability?.topics?.[selectedClientNeed] : availability?.mixed;
+  const availableCount = selectedAvailability?.available || 0;
+  const countOptions = [...new Set([5, 10, 25, 50, 85, availableCount])].filter((count) => count > 0 && count <= availableCount).sort((a, b) => a - b);
+  const effectiveQuestionCount = countOptions.includes(Number(questionCount)) ? questionCount : String(countOptions[0] || '');
+  const activeSession = history.find((session) => !session.isCompleted);
+  const weakestCategory = [...(performance.categories || [])].sort((a, b) => a.accuracy - b.accuracy)[0];
 
   return (
     <div className="student-area">
-      <aside className="student-sidebar">
+      <aside className={`student-sidebar ${sidebarOpen ? 'is-open' : ''}`} id="student-sidebar">
         <div>
+          <button className="offcanvas-close" onClick={() => setSidebarOpen(false)} type="button" aria-label="Close student menu">
+            <ActionIcon name="close" />
+          </button>
           <a className="student-brand" href="/">
             <LogoMark />
             <span>
@@ -120,20 +153,40 @@ export default function StudentAreaPage() {
             </span>
           </a>
           <nav>
-            <a className="active" href="#study">
+            <a className={!showingStudyGuides ? 'active' : ''} href="/student-area#study" onClick={() => setSidebarOpen(false)}>
               Study
             </a>
-            <a href="#performance">Performance</a>
-            <a href="#history">History</a>
-            <a href="#videos">Videos</a>
-            <a href="/study-guide">Study Guides</a>
+            <a href="/student-area#performance" onClick={() => setSidebarOpen(false)}>Performance</a>
+            <a href="/student-area#history" onClick={() => setSidebarOpen(false)}>History</a>
+            <a href="/student-area#videos" onClick={() => setSidebarOpen(false)}>Videos</a>
+            <a className={showingStudyGuides ? 'active' : ''} href="/student-area?view=study-guides" onClick={() => setSidebarOpen(false)}>Study Guides</a>
           </nav>
         </div>
         <button className="student-signout" onClick={signOut} type="button">
           Sign out
         </button>
       </aside>
+      <button
+        aria-label="Close student menu"
+        className={`offcanvas-backdrop ${sidebarOpen ? 'is-visible' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+        tabIndex={sidebarOpen ? 0 : -1}
+        type="button"
+      />
       <main className="student-content">
+        <div className="student-mobile-header">
+          <button
+            aria-controls="student-sidebar"
+            aria-expanded={sidebarOpen}
+            className="offcanvas-toggle"
+            onClick={() => setSidebarOpen(true)}
+            type="button"
+          >
+            <span className="offcanvas-menu-icon" aria-hidden="true"><i /><i /><i /></span>
+            Menu
+          </button>
+          <strong>Student Area</strong>
+        </div>
         <div className="student-topbar">
           <div>
             <span>
@@ -142,8 +195,19 @@ export default function StudentAreaPage() {
             </span>
             <h1>Ready for your next session?</h1>
           </div>
-          <div className="student-avatar">{initials}</div>
+          <div className="student-account-summary">
+            <span className={`student-plan-badge ${student?.accessTier === 'PREMIUM' ? 'premium' : 'free'}`}>
+              {student?.accessTier === 'PREMIUM' && <ActionIcon name="diamond" size={13} />}
+              {student?.accessTier === 'PREMIUM' ? 'Premium' : 'Free'}
+            </span>
+            <div className="student-avatar">{initials}</div>
+          </div>
         </div>
+        {showingStudyGuides ? <StudyGuideContent embedded /> : <>
+        {activeSession && <section className="continue-session-banner">
+          <div><span>Continue where you left off</span><strong>{activeSession.mode === 'PRACTICE' ? 'Practice' : 'Test'} · {displayTopic(activeSession.clientNeed)}</strong><p>{activeSession.questionCount} questions · Started {formatDate(activeSession.createdAt)}</p></div>
+          <a href={`/study-session?id=${activeSession.id}`}>Continue studying</a>
+        </section>}
         {diagnostic && (
           <section className="diagnostic-summary-banner">
             <div>
@@ -181,6 +245,7 @@ export default function StudentAreaPage() {
             <span className="category-label">Create a session</span>
             <h2>Choose your study mode</h2>
           </div>
+          <div className="session-builder-steps" aria-label="Session setup steps"><span className="active">1 <b>Mode</b></span><span>2 <b>Topic</b></span><span>3 <b>Questions</b></span></div>
           <div className="study-mode-grid">
             <button
               className={selectedMode === 'practice' ? 'selected' : ''}
@@ -226,16 +291,14 @@ export default function StudentAreaPage() {
             <label>
               Number of questions
               <select
-                value={questionCount}
+                value={effectiveQuestionCount}
                 onChange={(event) => setQuestionCount(event.target.value)}
               >
-                <option>10</option>
-                <option>25</option>
-                <option>50</option>
-                <option>85</option>
+                {countOptions.length ? countOptions.map((count) => <option key={count}>{count}</option>) : <option value="">No questions available</option>}
               </select>
+              <small className="availability-copy">{availability ? <>{availableCount} available{selectedAvailability?.locked ? <> · <span className="premium-inline"><ActionIcon name="diamond" size={11} /> {selectedAvailability.locked} premium</span></> : null}</> : 'Checking availability...'}</small>
             </label>
-            <button aria-busy={starting} disabled={starting} onClick={startSession} type="button">
+            <button aria-busy={starting} disabled={starting || !availableCount} onClick={startSession} type="button">
               <ButtonLoader loading={starting} loadingText="Starting...">
                 {`Start ${selectedMode === 'practice' ? 'Practice' : 'Test'}`}
               </ButtonLoader>
@@ -263,8 +326,9 @@ export default function StudentAreaPage() {
             <div>
               <strong>Your video lessons will live here</strong>
               <p>
-                Upcoming Zoom recordings will be securely processed and added
-                to your library for on-demand viewing.
+                {student?.accessTier === 'PREMIUM'
+                  ? 'Upcoming Zoom recordings will be securely processed and added to your premium library for on-demand viewing.'
+                  : 'Video lessons will be a premium benefit. Upgrade access will be available when the video library launches.'}
               </p>
               <div className="video-feature-list" aria-label="Planned video features">
                 <span>Recorded classes</span>
@@ -330,9 +394,11 @@ export default function StudentAreaPage() {
                 recommendations.
               </p>
             )}
-            <a href="/study-guide">Browse study guides</a>
+            {weakestCategory && <p className="performance-recommendation"><strong>Based on your sessions:</strong> Review {displayTopic(weakestCategory.clientNeed)} ({weakestCategory.accuracy}% accuracy).</p>}
+            <a href="/student-area?view=study-guides">Browse study guides</a>
           </article>
         </section>
+        </>}
       </main>
     </div>
   );

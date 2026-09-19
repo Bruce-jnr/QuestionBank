@@ -14,6 +14,7 @@ export default function Footer() {
           </a>
         ))}
         <a href="/faq">FAQ</a>
+        <a href="/pricing">Plans</a>
         <a href="/privacy-policy">Privacy Policy</a>
       </div>
       <p>

@@ -62,7 +62,7 @@ async function getAllCategories(req, res) {
     }
 
     const decoded = verifyToken(token);
-    if (!decoded || (decoded.role && decoded.role !== 'admin')) {
+    if (!decoded || decoded.role !== 'admin') {
       return sendJSON(res, 403, { error: 'Invalid or expired token' });
     }
 
@@ -85,7 +85,7 @@ async function getCategory(req, res) {
     }
 
     const decoded = verifyToken(token);
-    if (!decoded || (decoded.role && decoded.role !== 'admin')) {
+    if (!decoded || decoded.role !== 'admin') {
       return sendJSON(res, 403, { error: 'Invalid or expired token' });
     }
 
@@ -118,7 +118,7 @@ async function createCategory(req, res) {
     }
 
     const decoded = verifyToken(token);
-    if (!decoded || (decoded.role && decoded.role !== 'admin')) {
+    if (!decoded || decoded.role !== 'admin') {
       return sendJSON(res, 403, { error: 'Invalid or expired token' });
     }
 
@@ -163,7 +163,7 @@ async function updateCategory(req, res) {
     }
 
     const decoded = verifyToken(token);
-    if (!decoded || (decoded.role && decoded.role !== 'admin')) {
+    if (!decoded || decoded.role !== 'admin') {
       return sendJSON(res, 403, { error: 'Invalid or expired token' });
     }
 
@@ -208,7 +208,7 @@ async function deleteCategory(req, res) {
     }
 
     const decoded = verifyToken(token);
-    if (!decoded || (decoded.role && decoded.role !== 'admin')) {
+    if (!decoded || decoded.role !== 'admin') {
       return sendJSON(res, 403, { error: 'Invalid or expired token' });
     }
 

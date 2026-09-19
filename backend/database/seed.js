@@ -280,17 +280,21 @@ const questions = [
 
 async function seedDatabase() {
   try {
-    const defaultPassword = 'admin123';
-    const hashedPassword = await hashPassword(defaultPassword);
+    const adminUsername = process.env.ADMIN_USERNAME;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (!adminUsername || !adminPassword || adminPassword.length < 16) {
+      throw new Error('ADMIN_USERNAME and ADMIN_PASSWORD (minimum 16 characters) are required in .env');
+    }
+    const hashedPassword = await hashPassword(adminPassword);
 
     const admin = await prisma.admin.upsert({
-      where: { username: 'admin' },
+      where: { username: adminUsername },
       create: {
-        username: 'admin',
+        username: adminUsername,
         password: hashedPassword,
         email: 'admin@nclexprep.com',
       },
-      update: {},
+      update: { password: hashedPassword },
     });
 
     for (const category of categories) {
@@ -360,8 +364,7 @@ async function seedDatabase() {
     }
 
     console.log('PostgreSQL database seeded successfully.');
-    console.log('Default admin username: admin');
-    console.log('Default admin password: admin123');
+    console.log(`Administrator account ready: ${adminUsername}`);
   } catch (error) {
     console.error('Error seeding database:', error.message);
     process.exitCode = 1;

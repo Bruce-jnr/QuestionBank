@@ -180,7 +180,9 @@ export default function HomePage() {
         <div className="testimonial-grid">
           {testimonials.map(([name, quote]) => (
             <blockquote key={name}>
-              <div className="stars">5.0 / 5.0</div>
+              <div className="stars" aria-label="5 out of 5 stars" role="img">
+                <span aria-hidden="true">★★★★★</span>
+              </div>
               <p>{quote}</p>
               <cite>{name}, RN</cite>
             </blockquote>

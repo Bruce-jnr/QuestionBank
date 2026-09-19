@@ -8,7 +8,7 @@ function authenticateToken(req, res, next) {
   }
 
   const decoded = verifyToken(token);
-  if (!decoded || (decoded.role && decoded.role !== 'admin')) {
+  if (!decoded || decoded.role !== 'admin') {
     return res.status(403).json({ error: 'Invalid or expired administrator token' });
   }
 
