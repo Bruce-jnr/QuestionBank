@@ -24,6 +24,13 @@ export function getPublishedPosts(params = '') {
   return request(`/api/public/posts${params ? `?${params}` : ''}`)
 }
 
+export function sendContactMessage(payload) {
+  return request('/api/public/contact', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function getCategories() {
   return request('/api/public/categories')
 }
@@ -107,6 +114,22 @@ export function login(payload) {
 
 export function verifySession() {
   return request('/api/auth/verify')
+}
+
+export function requestPasswordReset(accountType, email) {
+  const prefix = accountType === 'student' ? '/api/student/auth' : '/api/auth'
+  return request(`${prefix}/password-reset/request`, {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+}
+
+export function completePasswordReset(accountType, email, code, password) {
+  const prefix = accountType === 'student' ? '/api/student/auth' : '/api/auth'
+  return request(`${prefix}/password-reset/complete`, {
+    method: 'POST',
+    body: JSON.stringify({ email, code, password }),
+  })
 }
 
 export function getAdminPosts(params = '') {

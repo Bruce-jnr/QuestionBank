@@ -94,6 +94,7 @@ export function StudyGuideContent({ embedded = false }) {
     <>
       {embedded ? <div className="embedded-guide-heading"><div><span className="category-label">Study guides</span><h1>Study by topic</h1><p>Review lessons without leaving your student dashboard.</p></div><a href="/student-area">Back to dashboard</a></div> : <PageHero
         align="center"
+        className="study-guide-hero"
         title="NCLEX Study Guide"
         text="A clear path from your first review session to exam day."
       />}

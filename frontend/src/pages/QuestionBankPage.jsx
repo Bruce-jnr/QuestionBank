@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import ButtonLoader from '../components/ButtonLoader';
 import PublicLayout from '../components/PublicLayout';
+import PasswordResetForm from '../components/PasswordResetForm';
 import { studentLogin } from '../services/api';
 
 export default function QuestionBankPage() {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState(false);
 
   async function submit(event) {
     event.preventDefault();
@@ -55,7 +57,8 @@ export default function QuestionBankPage() {
             </article>
           </div>
         </div>
-        <form className="student-login-card stacked-form" onSubmit={submit}>
+        <div className="student-login-card">
+        {resettingPassword ? <PasswordResetForm accountType="student" onCancel={() => setResettingPassword(false)} /> : <form className="stacked-form" onSubmit={submit}>
           <div>
             <span className="category-label">Student access</span>
             <h2>Sign in to study</h2>
@@ -89,10 +92,12 @@ export default function QuestionBankPage() {
           <button aria-busy={loading} disabled={loading} type="submit">
             <ButtonLoader loading={loading} loadingText="Signing in...">Open Student Area</ButtonLoader>
           </button>
+          <button className="text-button" onClick={() => setResettingPassword(true)} type="button">Forgot password?</button>
           <p className="student-help">
             Need access? Contact your CBRUCENCLEX administrator.
           </p>
-        </form>
+        </form>}
+        </div>
       </section>
       <section className="page-section question-features">
         <div className="centered-heading">

@@ -13,6 +13,7 @@ function clientAddress(req) {
 function createRateLimiter({
   windowMs = DEFAULT_WINDOW_MS,
   maxAttempts = DEFAULT_MAX_ATTEMPTS,
+  message = 'Too many login attempts. Please try again in 15 minutes.',
 } = {}) {
   const clients = new Map();
 
@@ -37,7 +38,7 @@ function createRateLimiter({
       res.setHeader('RateLimit-Remaining', '0');
 
       const payload = JSON.stringify({
-        error: 'Too many login attempts. Please try again in 15 minutes.',
+        error: message,
       });
 
       if (typeof res.status === 'function') {

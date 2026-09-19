@@ -1,14 +1,30 @@
 import { useState } from 'react';
 import PageHero from '../components/PageHero';
 import PublicLayout from '../components/PublicLayout';
+import ButtonLoader from '../components/ButtonLoader';
+import { sendContactMessage } from '../services/api';
 
 export default function ContactPage() {
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
 
-  function submit(event) {
+  async function submit(event) {
     event.preventDefault();
-    setSent(true);
-    event.currentTarget.reset();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    setSending(true);
+    setSent(false);
+    setError('');
+    try {
+      await sendContactMessage(Object.fromEntries(data));
+      setSent(true);
+      form.reset();
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -22,21 +38,44 @@ export default function ContactPage() {
           <h2>Send us a Message</h2>
           <label>
             Name
-            <input required placeholder="Your name" />
+            <input name="name" required placeholder="Your name" />
           </label>
           <label>
             Email
-            <input required type="email" placeholder="your.email@example.com" />
+            <input
+              name="email"
+              required
+              type="email"
+              placeholder="your.email@example.com"
+            />
           </label>
           <label>
             Subject
-            <input required placeholder="What is this about?" />
+            <input name="subject" required placeholder="What is this about?" />
           </label>
           <label>
             Message
-            <textarea required placeholder="Tell us how we can help..." />
+            <textarea
+              minLength="10"
+              name="message"
+              required
+              placeholder="Tell us how we can help..."
+            />
           </label>
-          <button type="submit">Send Message</button>
+          <label className="contact-honeypot" aria-hidden="true">
+            Website
+            <input autoComplete="off" name="website" tabIndex="-1" />
+          </label>
+          <button aria-busy={sending} disabled={sending} type="submit">
+            <ButtonLoader loading={sending} loadingText="Sending...">
+              Send Message
+            </ButtonLoader>
+          </button>
+          {error && (
+            <p className="error-text" role="alert">
+              {error}
+            </p>
+          )}
           {sent && (
             <p className="form-note">
               Thank you. Your message has been received.
@@ -48,11 +87,11 @@ export default function ContactPage() {
           <p>We are here to support your NCLEX journey.</p>
           <article>
             <h3>Email Us</h3>
-            <a href="mailto:support@nclexreview.com">support@nclexreview.com</a>
+            <a href="mailto:support@cbrucenclex.com">support@cbrucenclex.com</a>
           </article>
           <article>
             <h3>Response Time</h3>
-            <p>We typically respond within 24-48 hours during business days.</p>
+            <p>We typically respond within 24 hours during business days.</p>
           </article>
           <article>
             <h3>Support Hours</h3>

@@ -321,3 +321,18 @@ model Setting {
 
   @@map("settings")
 }
+
+model PasswordResetOtp {
+  id           String    @id @default(uuid()) @db.Uuid
+  account_type String    @db.VarChar(20)
+  email        String    @db.VarChar(255)
+  code_hash    String    @db.VarChar(64)
+  expires_at   DateTime  @db.Timestamp(6)
+  attempts     Int       @default(0)
+  used_at      DateTime? @db.Timestamp(6)
+  created_at   DateTime  @default(now()) @db.Timestamp(6)
+
+  @@index([account_type, email, created_at])
+  @@index([expires_at])
+  @@map("password_reset_otps")
+}

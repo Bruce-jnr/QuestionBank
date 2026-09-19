@@ -1,5 +1,6 @@
 export default function PageHero({
   align = 'left',
+  className: customClassName = '',
   image,
   imageAlt = '',
   title,
@@ -9,6 +10,7 @@ export default function PageHero({
     'page-hero',
     image ? 'has-image' : '',
     align === 'center' ? 'is-centered' : '',
+    customClassName,
   ]
     .filter(Boolean)
     .join(' ');

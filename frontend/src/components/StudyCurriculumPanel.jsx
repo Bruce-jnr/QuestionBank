@@ -206,6 +206,7 @@ export default function StudyCurriculumPanel() {
                         <h3>{topic.name}</h3>
                         <p>{topic.description}</p>
                       </div>
+                      <div className="dashboard-actions curriculum-topic-actions">
                       <button
                         aria-label={`Edit ${topic.name}`}
                         className="icon-button"
@@ -238,6 +239,7 @@ export default function StudyCurriculumPanel() {
                       >
                         <ActionIcon name="delete" />
                       </button>
+                      </div>
                     </div>
                     <div className="module-list">
                       {topic.modules?.map((module) => (
