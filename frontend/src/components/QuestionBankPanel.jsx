@@ -292,9 +292,11 @@ export default function QuestionBankPanel() {
         throw new Error('The file does not contain any questions.');
       const questionsToImport = importedRows.map(normalizeImport);
       const result = await importQuestions(questionsToImport);
-      setNotice(
-        `${result.imported} question${result.imported === 1 ? '' : 's'} imported.`,
-      );
+      const importedMessage = `${result.imported} question${result.imported === 1 ? '' : 's'} imported`;
+      const skippedMessage = result.skipped
+        ? `; ${result.skipped} duplicate${result.skipped === 1 ? '' : 's'} skipped`
+        : '';
+      setNotice(`${importedMessage}${skippedMessage}.`);
       setAppliedSearch('');
       setSearch('');
       setFilters(emptyFilters);
@@ -383,6 +385,7 @@ export default function QuestionBankPanel() {
         Imports support a JSON array (or a <code>questions</code> array) and CSV
         files based on the downloadable template. Separate CSV options with{' '}
         <code>|</code> and option IDs from text with <code>:</code>.
+        Duplicate external IDs or matching stems and prompts are skipped.
       </p>
       <section className="dashboard-panel">
         <form className="question-filter-bar" onSubmit={submitSearch}>

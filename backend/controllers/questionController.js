@@ -73,6 +73,18 @@ function questionData(data, createdBy) {
   };
 }
 
+function normalizeQuestionText(value) {
+  return String(value || '')
+    .normalize('NFKC')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+}
+
+function questionFingerprint(question) {
+  return `${normalizeQuestionText(question.stem)}\u0000${normalizeQuestionText(question.prompt)}`;
+}
+
 async function listQuestions(req, res) {
   const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
   const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 20));
@@ -173,14 +185,51 @@ async function importQuestions(req, res) {
   if (!result.success) return validationError(res, result);
 
   try {
-    const questions = await prisma.$transaction(
-      result.data.map((question) => prisma.question.create({
+    const existingQuestions = await prisma.question.findMany({
+      select: { external_id: true, stem: true, prompt: true },
+    });
+    const knownIds = new Set(
+      existingQuestions.map((question) => question.external_id).filter(Boolean),
+    );
+    const knownContent = new Set(existingQuestions.map(questionFingerprint));
+    const accepted = [];
+    const duplicates = [];
+
+    result.data.forEach((question, index) => {
+      const fingerprint = questionFingerprint(question);
+      let reason = '';
+      if (question.externalId && knownIds.has(question.externalId)) {
+        reason = 'external ID already exists';
+      } else if (knownContent.has(fingerprint)) {
+        reason = 'matching stem and prompt already exist';
+      }
+
+      if (reason) {
+        duplicates.push({
+          row: index + 1,
+          externalId: question.externalId || null,
+          reason,
+        });
+        return;
+      }
+
+      accepted.push(question);
+      if (question.externalId) knownIds.add(question.externalId);
+      knownContent.add(fingerprint);
+    });
+
+    const questions = accepted.length ? await prisma.$transaction(
+      accepted.map((question) => prisma.question.create({
         data: questionData(question, req.user.userId),
       })),
-    );
-    return res.status(201).json({ imported: questions.length, questions });
+    ) : [];
+    return res.status(201).json({
+      imported: questions.length,
+      skipped: duplicates.length,
+      duplicates,
+    });
   } catch (error) {
-    if (error.code === 'P2002') return res.status(409).json({ error: 'The import contains an existing question ID' });
+    if (error.code === 'P2002') return res.status(409).json({ error: 'A duplicate was created by another import. Please upload the file again.' });
     console.error('Import questions error:', error);
     return res.status(500).json({ error: 'Unable to import questions' });
   }
