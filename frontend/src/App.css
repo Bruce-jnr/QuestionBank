@@ -3016,7 +3016,7 @@ body.offcanvas-open {
 
 .session-options {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
   gap: 16px;
   align-items: end;
 }
@@ -3431,6 +3431,220 @@ body.offcanvas-open {
   color: var(--primary);
   background: rgba(43, 140, 238, 0.12);
   font-weight: 850;
+}
+
+.drag-drop-answer {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.drag-option-panel {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #dfe5eb;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.drag-panel-heading {
+  margin-bottom: 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.drag-panel-heading h2 {
+  margin: 3px 0 0;
+  font-size: 1rem;
+}
+
+.drag-panel-heading > span {
+  color: #66717d;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.drag-step {
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.drag-option-bank,
+.drag-order-zone {
+  min-height: 190px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  border-radius: 11px;
+}
+
+.drag-order-zone {
+  padding: 9px;
+  border: 2px dashed #cbd5df;
+  background: #fff;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.drag-order-zone.is-active {
+  border-color: var(--primary);
+  background: rgba(43, 140, 238, 0.04);
+}
+
+.drag-choice,
+.drag-ordered-item {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #d7dee6;
+  border-radius: 9px;
+  color: #20262d;
+  background: #fff;
+  box-shadow: 0 2px 7px rgba(16, 35, 55, 0.05);
+}
+
+.drag-choice {
+  width: 100%;
+  padding: 12px 14px;
+  font: inherit;
+  text-align: left;
+  cursor: grab;
+}
+
+.drag-choice:hover,
+.drag-choice:focus-visible,
+.drag-ordered-item:focus-within {
+  border-color: var(--primary);
+}
+
+.drag-ordered-item {
+  padding: 8px 8px 8px 12px;
+  cursor: grab;
+}
+
+.drag-choice:active,
+.drag-ordered-item:active {
+  cursor: grabbing;
+}
+
+.drag-choice.is-dragging,
+.drag-ordered-item.is-dragging {
+  opacity: 0.42;
+}
+
+.drag-grip {
+  flex: 0 0 auto;
+  color: #8793a0;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.drag-order-number {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--primary);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.drag-option-text {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.drag-item-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.drag-item-actions button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  color: #52606d;
+  background: #edf1f5;
+}
+
+.drag-item-actions button:hover:not(:disabled),
+.drag-item-actions button:focus-visible {
+  color: var(--primary);
+  background: rgba(43, 140, 238, 0.12);
+}
+
+.drag-item-actions button:disabled {
+  opacity: 0.35;
+}
+
+.drag-empty-zone {
+  min-height: 168px;
+  padding: 24px;
+  border: 0;
+  color: #65717d;
+  background: transparent;
+  font: inherit;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.drag-bank-empty {
+  margin: 0;
+  padding: 24px;
+  color: #65717d;
+  text-align: center;
+}
+
+.drag-help {
+  margin: 10px 0 0;
+  color: #66717d;
+  font-size: 0.78rem;
+}
+
+.drag-drop-answer.is-disabled {
+  opacity: 0.78;
+}
+
+@media (max-width: 760px) {
+  .drag-drop-answer {
+    grid-template-columns: 1fr;
+  }
+
+  .drag-option-bank,
+  .drag-order-zone {
+    min-height: 110px;
+  }
+
+  .drag-empty-zone {
+    min-height: 90px;
+  }
+
+  .drag-ordered-item {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .drag-option-text {
+    padding-top: 3px;
+  }
+
+  .drag-item-actions {
+    width: 100%;
+    padding-left: 66px;
+    justify-content: flex-end;
+  }
 }
 
 .answer-feedback {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import LogoMark from '../components/LogoMark';
 import ButtonLoader from '../components/ButtonLoader';
+import ActionIcon from '../components/ActionIcon';
 import {
   finalizeExamSession,
   getExamSession,
@@ -23,6 +24,135 @@ function questionFeedback(question) {
     correctAnswers: question.correctAnswers,
     rationale: question.rationale,
   };
+}
+
+function DragDropAnswer({ disabled, onChange, options, selected }) {
+  const [draggingId, setDraggingId] = useState('');
+  const optionById = useMemo(
+    () => new Map(options.map((option) => [option.id, option])),
+    [options],
+  );
+  const available = options.filter((option) => !selected.includes(option.id));
+
+  function placeOption(optionId, targetIndex) {
+    if (disabled) return;
+    onChange((values) => {
+      const next = values.filter((id) => id !== optionId);
+      next.splice(Math.max(0, Math.min(targetIndex, next.length)), 0, optionId);
+      return next;
+    });
+  }
+
+  function removeOption(optionId) {
+    if (!disabled) onChange((values) => values.filter((id) => id !== optionId));
+  }
+
+  function dropAt(event, index) {
+    event.preventDefault();
+    const optionId = event.dataTransfer.getData('text/plain') || draggingId;
+    if (optionById.has(optionId)) placeOption(optionId, index);
+    setDraggingId('');
+  }
+
+  function beginDrag(event, optionId) {
+    if (disabled) return;
+    setDraggingId(optionId);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', optionId);
+  }
+
+  return (
+    <div className={`drag-drop-answer ${disabled ? 'is-disabled' : ''}`}>
+      <section className="drag-option-panel" aria-labelledby="available-items-title">
+        <div className="drag-panel-heading">
+          <div>
+            <span className="drag-step">Step 1</span>
+            <h2 id="available-items-title">Available items</h2>
+          </div>
+          <span>{available.length} remaining</span>
+        </div>
+        <div
+          className="drag-option-bank"
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => {
+            event.preventDefault();
+            const optionId = event.dataTransfer.getData('text/plain') || draggingId;
+            removeOption(optionId);
+            setDraggingId('');
+          }}
+        >
+          {available.length ? available.map((option) => (
+            <button
+              className={`drag-choice ${draggingId === option.id ? 'is-dragging' : ''}`}
+              disabled={disabled}
+              draggable={!disabled}
+              key={option.id}
+              onClick={() => placeOption(option.id, selected.length)}
+              onDragEnd={() => setDraggingId('')}
+              onDragStart={(event) => beginDrag(event, option.id)}
+              type="button"
+            >
+              <span className="drag-grip" aria-hidden="true">⠿</span>
+              <span>{option.text}</span>
+            </button>
+          )) : <p className="drag-bank-empty">All items have been placed.</p>}
+        </div>
+      </section>
+
+      <section className="drag-option-panel" aria-labelledby="answer-order-title">
+        <div className="drag-panel-heading">
+          <div>
+            <span className="drag-step">Step 2</span>
+            <h2 id="answer-order-title">Your answer order</h2>
+          </div>
+          <span>{selected.length} placed</span>
+        </div>
+        <div
+          className={`drag-order-zone ${draggingId ? 'is-active' : ''}`}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => dropAt(event, selected.length)}
+        >
+          {selected.length ? selected.map((optionId, index) => {
+            const option = optionById.get(optionId);
+            if (!option) return null;
+            return (
+              <div
+                className={`drag-ordered-item ${draggingId === optionId ? 'is-dragging' : ''}`}
+                draggable={!disabled}
+                key={optionId}
+                onDragEnd={() => setDraggingId('')}
+                onDragOver={(event) => event.preventDefault()}
+                onDragStart={(event) => beginDrag(event, optionId)}
+                onDrop={(event) => {
+                  event.stopPropagation();
+                  dropAt(event, index);
+                }}
+              >
+                <span className="drag-grip" aria-hidden="true">⠿</span>
+                <span className="drag-order-number">{index + 1}</span>
+                <span className="drag-option-text">{option.text}</span>
+                <div className="drag-item-actions">
+                  <button aria-label={`Move ${option.text} up`} disabled={disabled || index === 0} onClick={() => placeOption(optionId, index - 1)} type="button">↑</button>
+                  <button aria-label={`Move ${option.text} down`} disabled={disabled || index === selected.length - 1} onClick={() => placeOption(optionId, index + 1)} type="button">↓</button>
+                  <button aria-label={`Remove ${option.text}`} disabled={disabled} onClick={() => removeOption(optionId)} type="button"><ActionIcon name="close" size={16} /></button>
+                </div>
+              </div>
+            );
+          }) : (
+            <button
+              className="drag-empty-zone"
+              disabled={disabled}
+              onClick={() => available[0] && placeOption(available[0].id, 0)}
+              type="button"
+            >
+              Drag items here, or tap an available item to add it
+            </button>
+          )}
+        </div>
+        <p className="drag-help">Drag to reorder. On touch or keyboard, use the arrow and remove controls.</p>
+      </section>
+    </div>
+  );
 }
 
 export default function StudySessionPage() {
@@ -306,20 +436,27 @@ export default function StudySessionPage() {
         <h1>{currentQuestion.prompt}</h1>
         {currentQuestion.content?.exhibits?.length > 0 && <div className="ngn-exhibits">{currentQuestion.content.exhibits.map((exhibit) => <details key={exhibit.title}><summary>{exhibit.title}</summary><p>{exhibit.content}</p></details>)}</div>}
         {['CLOZE_DROP_DOWN', 'MATRIX_GRID'].includes(currentQuestion.questionType) ? <div className="ngn-grouped-options">{Object.entries(groupedOptions).map(([group, options]) => <label key={group}><span>{group}</span><select disabled={Boolean(feedback) && session.mode === 'PRACTICE'} onChange={(event) => setSelected((values) => [...values.filter((id) => !options.some((option) => option.id === id)), event.target.value].filter(Boolean))} value={selected.find((id) => options.some((option) => option.id === id)) || ''}><option value="">Select...</option>{options.map((option) => <option key={option.id} value={option.id}>{option.text}</option>)}</select></label>)}</div> : null}
-        <div className="session-answer-options">
+        {currentQuestion.questionType === 'DRAG_DROP' ? (
+          <DragDropAnswer
+            disabled={Boolean(feedback) && session.mode === 'PRACTICE'}
+            onChange={setSelected}
+            options={currentQuestion.options}
+            selected={selected}
+          />
+        ) : <div className="session-answer-options">
           {!['CLOZE_DROP_DOWN', 'MATRIX_GRID'].includes(currentQuestion.questionType) && currentQuestion.options.map((option) => (
             <button
               className={selected.includes(option.id) ? 'selected' : ''}
               disabled={Boolean(feedback) && session.mode === 'PRACTICE'}
               key={option.id}
-              onClick={() => currentQuestion.questionType === 'DRAG_DROP' ? setSelected((values) => values.includes(option.id) ? values.filter((id) => id !== option.id) : [...values, option.id]) : choose(option.id)}
+              onClick={() => choose(option.id)}
               type="button"
             >
               <span>{option.id.toUpperCase()}</span>
-              {currentQuestion.questionType === 'DRAG_DROP' && selected.includes(option.id) ? `${selected.indexOf(option.id) + 1}. ` : ''}{option.text}
+              {option.text}
             </button>
           ))}
-        </div>
+        </div>}
         {feedback && (
           <div
             className={`answer-feedback ${feedback.isCorrect ? 'correct' : 'review'}`}

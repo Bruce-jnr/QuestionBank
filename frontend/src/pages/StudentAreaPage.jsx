@@ -13,6 +13,20 @@ import {
 } from '../services/api';
 import { formatDate } from '../utils/formatDate';
 
+const questionTypes = [
+  ['', 'All question types'],
+  ['MULTIPLE_CHOICE', 'Multiple choice'],
+  ['MULTIPLE_RESPONSE', 'Multiple response'],
+  ['EXTENDED_MULTIPLE_RESPONSE', 'NGN extended multiple response'],
+  ['DRAG_DROP', 'NGN drag and drop'],
+  ['HOT_SPOT', 'NGN enhanced hot spot'],
+  ['MATRIX_GRID', 'Matrix grid'],
+  ['CLOZE_DROP_DOWN', 'Cloze drop-down'],
+  ['CASE_STUDY', 'NGN case study'],
+  ['RATIONALE_PAIRED', 'Rationale paired'],
+  ['BOW_TIE', 'Bow tie'],
+];
+
 function readDiagnosticResult() {
   try {
     return JSON.parse(localStorage.getItem('nclexDiagnosticResult'));
@@ -54,6 +68,7 @@ export default function StudentAreaPage() {
   const [studyTopics, setStudyTopics] = useState([]);
   const [availability, setAvailability] = useState(null);
   const [selectedMode, setSelectedMode] = useState('practice');
+  const [questionType, setQuestionType] = useState('');
   const [topic, setTopic] = useState(
     new URLSearchParams(window.location.search).get('topic') ||
       diagnostic?.focusCategories?.[0] ||
@@ -122,6 +137,7 @@ export default function StudentAreaPage() {
         clientNeed:
           studyTopics.find((category) => category.name === topic)
             ?.client_need || null,
+        questionType: questionType || null,
         questionCount: Number(effectiveQuestionCount),
       });
       window.location.assign(`/study-session?id=${data.session.id}`);
@@ -147,8 +163,12 @@ export default function StudentAreaPage() {
     (category) => category.name === topic,
   )?.client_need;
   const selectedAvailability = selectedClientNeed
-    ? availability?.topics?.[selectedClientNeed]
-    : availability?.mixed;
+    ? questionType
+      ? availability?.filters?.[selectedClientNeed]?.[questionType]
+      : availability?.topics?.[selectedClientNeed]
+    : questionType
+      ? availability?.questionTypes?.[questionType]
+      : availability?.mixed;
   const availableCount = selectedAvailability?.available || 0;
   const countOptions = [...new Set([5, 10, 25, 50, 85, availableCount])]
     .filter((count) => count > 0 && count <= availableCount)
@@ -339,10 +359,10 @@ export default function StudentAreaPage() {
                   1 <b>Mode</b>
                 </span>
                 <span>
-                  2 <b>Topic</b>
+                  2 <b>Filters</b>
                 </span>
                 <span>
-                  3 <b>Questions</b>
+                  3 <b>Question count</b>
                 </span>
               </div>
               <div className="study-mode-grid">
@@ -376,14 +396,25 @@ export default function StudentAreaPage() {
               {error && <p className="student-error">{error}</p>}
               <div className="session-options">
                 <label>
-                  Question topic
+                  Client need
                   <select
                     value={topic}
                     onChange={(event) => setTopic(event.target.value)}
                   >
-                    <option>Mixed Topics</option>
+                    <option value="Mixed Topics">All client needs</option>
                     {studyTopics.map((category) => (
                       <option key={category.id}>{category.name}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Question type
+                  <select
+                    value={questionType}
+                    onChange={(event) => setQuestionType(event.target.value)}
+                  >
+                    {questionTypes.map(([value, label]) => (
+                      <option key={value || 'all'} value={value}>{label}</option>
                     ))}
                   </select>
                 </label>

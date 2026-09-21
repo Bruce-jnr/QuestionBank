@@ -3,13 +3,15 @@ function uniqueValues(values) {
   return [...new Set(values.map(String))];
 }
 
-function calculateScore(scoringMethod, selectedValues, correctValues) {
+function calculateScore(scoringMethod, selectedValues, correctValues, questionType) {
   const selected = uniqueValues(selectedValues);
   const correct = uniqueValues(correctValues);
   const correctSet = new Set(correct);
   const selectedSet = new Set(selected);
   const exactMatch = selected.length === correct.length
-    && selected.every((value) => correctSet.has(value));
+    && (questionType === 'DRAG_DROP'
+      ? selected.every((value, index) => value === correct[index])
+      : selected.every((value) => correctSet.has(value)));
 
   if (scoringMethod === 'PLUS_MINUS') {
     const correctSelections = selected.filter((value) => correctSet.has(value)).length;

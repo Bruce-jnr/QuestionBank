@@ -1,0 +1,22 @@
+[
+  {
+    "externalId": "drag-001",
+    "stem": "A nurse is preparing to administer medication.",
+    "prompt": "Arrange the actions in the correct order.",
+    "options": [
+      { "id": "a", "text": "Verify the medication order" },
+      { "id": "b", "text": "Identify the client" },
+      { "id": "c", "text": "Administer the medication" },
+      { "id": "d", "text": "Document administration" }
+    ],
+    "correctAnswers": ["a", "b", "c", "d"],
+    "content": {},
+    "rationale": "The nurse verifies the order, identifies the client, administers the medication, and then documents it.",
+    "clientNeed": "MANAGEMENT_OF_CARE",
+    "questionType": "DRAG_DROP",
+    "scoringMethod": "ZERO_ONE",
+    "difficulty": 0.5,
+    "status": "PUBLISHED",
+    "accessTier": "PREMIUM"
+  }
+]

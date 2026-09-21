@@ -13,9 +13,23 @@ const clientNeeds = [
   'PHYSIOLOGICAL_ADAPTATION',
 ];
 
+const questionTypes = [
+  'MULTIPLE_CHOICE',
+  'MULTIPLE_RESPONSE',
+  'EXTENDED_MULTIPLE_RESPONSE',
+  'DRAG_DROP',
+  'HOT_SPOT',
+  'MATRIX_GRID',
+  'CLOZE_DROP_DOWN',
+  'CASE_STUDY',
+  'RATIONALE_PAIRED',
+  'BOW_TIE',
+];
+
 const startSchema = z.object({
   mode: z.enum(['PRACTICE', 'TEST']),
   clientNeed: z.enum(clientNeeds).nullable().optional(),
+  questionType: z.enum(questionTypes).nullable().optional(),
   questionCount: z.coerce.number().int().min(1).max(85),
 });
 
@@ -116,6 +130,7 @@ async function startSession(req, res) {
       status: 'PUBLISHED',
       ...(!hasPremium ? { access_tier: 'FREE' } : {}),
       ...(result.data.clientNeed ? { client_need: result.data.clientNeed } : {}),
+      ...(result.data.questionType ? { question_type: result.data.questionType } : {}),
     };
     const available = await prisma.question.findMany({ where, select: { id: true } });
     const selected = shuffle(available).slice(0, result.data.questionCount);
@@ -184,6 +199,7 @@ async function submitAnswer(req, res) {
       sessionQuestion.question.scoring_method,
       result.data.selected,
       sessionQuestion.question.correct_answers,
+      sessionQuestion.question.question_type,
     );
     const answer = await prisma.userAnswer.upsert({
       where: {
@@ -247,6 +263,7 @@ async function finalizeSession(req, res) {
         item.question.scoring_method,
         [],
         item.question.correct_answers,
+        item.question.question_type,
       ).pointsPossible;
     }, 0);
     const timeSpentSec = session.answers.reduce((sum, answer) => sum + answer.time_spent_sec, 0);
@@ -345,12 +362,15 @@ async function getAvailability(req, res) {
     const hasPremium = student.access_tier === 'PREMIUM'
       && (!student.premium_until || student.premium_until > new Date());
     const groups = await prisma.question.groupBy({
-      by: ['client_need', 'access_tier'],
+      by: ['client_need', 'question_type', 'access_tier'],
       where: { status: 'PUBLISHED' },
       _count: { id: true },
     });
-    const summarize = (clientNeed = null) => {
-      const matching = clientNeed ? groups.filter((group) => group.client_need === clientNeed) : groups;
+    const summarize = (clientNeed = null, questionType = null) => {
+      const matching = groups.filter((group) => (
+        (!clientNeed || group.client_need === clientNeed)
+        && (!questionType || group.question_type === questionType)
+      ));
       const free = matching.filter((group) => group.access_tier === 'FREE').reduce((sum, group) => sum + group._count.id, 0);
       const premium = matching.filter((group) => group.access_tier === 'PREMIUM').reduce((sum, group) => sum + group._count.id, 0);
       return { free, premium, total: free + premium, available: hasPremium ? free + premium : free, locked: hasPremium ? 0 : premium };
@@ -359,6 +379,11 @@ async function getAvailability(req, res) {
       accessTier: hasPremium ? 'PREMIUM' : 'FREE',
       mixed: summarize(),
       topics: Object.fromEntries(clientNeeds.map((clientNeed) => [clientNeed, summarize(clientNeed)])),
+      questionTypes: Object.fromEntries(questionTypes.map((questionType) => [questionType, summarize(null, questionType)])),
+      filters: Object.fromEntries(clientNeeds.map((clientNeed) => [
+        clientNeed,
+        Object.fromEntries(questionTypes.map((questionType) => [questionType, summarize(clientNeed, questionType)])),
+      ])),
     });
   } catch (error) {
     console.error('Question availability error:', error);
