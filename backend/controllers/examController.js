@@ -311,6 +311,22 @@ async function getHistory(req, res) {
   }
 }
 
+async function deleteSession(req, res) {
+  const sessionId = z.string().uuid().safeParse(req.params.id);
+  if (!sessionId.success) return res.status(400).json({ error: 'Invalid session ID' });
+
+  try {
+    const deleted = await prisma.examSession.deleteMany({
+      where: { id: sessionId.data, student_id: req.user.userId },
+    });
+    if (!deleted.count) return res.status(404).json({ error: 'Study session not found' });
+    return res.json({ message: 'Study session deleted' });
+  } catch (error) {
+    console.error('Delete session error:', error);
+    return res.status(500).json({ error: 'Unable to delete the study session' });
+  }
+}
+
 async function getPerformance(req, res) {
   try {
     const [answers, completedSessions] = await Promise.all([
@@ -392,6 +408,7 @@ async function getAvailability(req, res) {
 }
 
 module.exports = {
+  deleteSession,
   finalizeSession,
   getHistory,
   getAvailability,

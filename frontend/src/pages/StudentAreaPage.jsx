@@ -4,6 +4,7 @@ import ButtonLoader from '../components/ButtonLoader';
 import ActionIcon from '../components/ActionIcon';
 import { StudyGuideContent } from './StudyGuidePage';
 import {
+  deleteExamSession,
   getStudyTopics,
   getQuestionAvailability,
   getStudentHistory,
@@ -77,6 +78,7 @@ export default function StudentAreaPage() {
   const [questionCount, setQuestionCount] = useState('10');
   const [error, setError] = useState('');
   const [starting, setStarting] = useState(false);
+  const [deletingSessionId, setDeletingSessionId] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -144,6 +146,24 @@ export default function StudentAreaPage() {
     } catch (requestError) {
       setError(requestError.message);
       setStarting(false);
+    }
+  }
+
+  async function removeSession(session) {
+    const label = session.isCompleted ? 'completed session' : 'in-progress session';
+    if (!window.confirm(`Delete this ${label} and all of its answers? This cannot be undone.`)) return;
+
+    setError('');
+    setDeletingSessionId(session.id);
+    try {
+      await deleteExamSession(session.id);
+      setHistory((sessions) => sessions.filter((item) => item.id !== session.id));
+      const performanceData = await getStudentPerformance();
+      setPerformance(performanceData.performance);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setDeletingSessionId('');
     }
   }
 
@@ -507,10 +527,8 @@ export default function StudentAreaPage() {
                 {history.length ? (
                   <div className="session-history">
                     {history.slice(0, 5).map((session) => (
-                      <a
-                        href={`/study-session?id=${session.id}`}
-                        key={session.id}
-                      >
+                      <div className="session-history-row" key={session.id}>
+                        <a href={`/study-session?id=${session.id}`}>
                         <span>
                           <strong>
                             {session.mode === 'PRACTICE' ? 'Practice' : 'Test'}{' '}
@@ -527,7 +545,21 @@ export default function StudentAreaPage() {
                             ? `${Math.round((session.score / session.maxScore) * 100)}%`
                             : 'Resume'}
                         </b>
-                      </a>
+                        </a>
+                        <button
+                          aria-busy={deletingSessionId === session.id}
+                          aria-label={`Delete ${session.mode === 'PRACTICE' ? 'practice' : 'test'} session from ${formatDate(session.completedAt || session.createdAt)}`}
+                          className="session-delete-button"
+                          disabled={Boolean(deletingSessionId)}
+                          onClick={() => removeSession(session)}
+                          title="Delete activity"
+                          type="button"
+                        >
+                          {deletingSessionId === session.id
+                            ? <span aria-hidden="true" className="button-spinner" />
+                            : <ActionIcon name="delete" size={17} />}
+                        </button>
+                      </div>
                     ))}
                   </div>
                 ) : (

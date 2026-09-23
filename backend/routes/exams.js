@@ -1,5 +1,6 @@
 const express = require('express');
 const {
+  deleteSession,
   finalizeSession,
   getHistory,
   getAvailability,
@@ -18,6 +19,7 @@ router.get('/availability', getAvailability);
 router.get('/history', getHistory);
 router.get('/performance', getPerformance);
 router.get('/:id', getSession);
+router.delete('/:id', deleteSession);
 router.post('/:id/answers', submitAnswer);
 router.post('/:id/finalize', finalizeSession);
 

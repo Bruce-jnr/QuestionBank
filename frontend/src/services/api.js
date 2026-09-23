@@ -248,6 +248,13 @@ export function getStudentHistory() {
   return request('/api/exam-sessions/history', { tokenType: 'student' })
 }
 
+export function deleteExamSession(sessionId) {
+  return request(`/api/exam-sessions/${sessionId}`, {
+    method: 'DELETE',
+    tokenType: 'student',
+  })
+}
+
 export function getStudentPerformance() {
   return request('/api/exam-sessions/performance', { tokenType: 'student' })
 }
