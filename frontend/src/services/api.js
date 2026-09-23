@@ -43,6 +43,24 @@ export function getStudyGuide() {
   return request('/api/public/study-guide')
 }
 
+export function getGuestQuestionAvailability() {
+  return request('/api/public/question-preview/availability')
+}
+
+export function startGuestQuestionPreview(payload) {
+  return request('/api/public/question-preview/start', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function submitGuestQuestionAnswer(payload) {
+  return request('/api/public/question-preview/answer', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function getStudyDomains() { return request('/api/study-content/domains') }
 export function createStudyDomain(payload) { return request('/api/study-content/domains', { method: 'POST', body: JSON.stringify(payload) }) }
 export function updateStudyDomain(id, payload) { return request(`/api/study-content/domains/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }) }

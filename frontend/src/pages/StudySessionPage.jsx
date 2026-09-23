@@ -26,7 +26,7 @@ function questionFeedback(question) {
   };
 }
 
-function DragDropAnswer({ disabled, onChange, options, selected }) {
+export function DragDropAnswer({ disabled, onChange, options, selected }) {
   const [draggingId, setDraggingId] = useState('');
   const optionById = useMemo(
     () => new Map(options.map((option) => [option.id, option])),

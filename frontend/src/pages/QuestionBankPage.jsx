@@ -2,6 +2,7 @@ import { useState } from 'react';
 import ButtonLoader from '../components/ButtonLoader';
 import PublicLayout from '../components/PublicLayout';
 import PasswordResetForm from '../components/PasswordResetForm';
+import GuestQuestionPreview from '../components/GuestQuestionPreview';
 import { studentLogin } from '../services/api';
 
 export default function QuestionBankPage() {
@@ -57,7 +58,7 @@ export default function QuestionBankPage() {
             </article>
           </div>
         </div>
-        <div className="student-login-card">
+        <div className="student-login-card" id="student-login">
         {resettingPassword ? <PasswordResetForm accountType="student" onCancel={() => setResettingPassword(false)} /> : <form className="stacked-form" onSubmit={submit}>
           <div>
             <span className="category-label">Student access</span>
@@ -99,6 +100,7 @@ export default function QuestionBankPage() {
         </form>}
         </div>
       </section>
+      <GuestQuestionPreview />
       <section className="page-section question-features">
         <div className="centered-heading">
           <span>Everything in one place</span>
