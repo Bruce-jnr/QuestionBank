@@ -51,13 +51,7 @@ jobs:
             echo "Restarting backend"
             echo "--------------------------------------"
 
-            pm2 restart QuestionBank
-
-            echo "--------------------------------------"
-            echo "Checking PM2 status"
-            echo "--------------------------------------"
-
-            pm2 status
+            sudo -u brucejnr /usr/bin/pm2 restart QuestionBank
 
             echo "======================================"
             echo "Deployment completed successfully!"
