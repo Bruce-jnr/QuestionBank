@@ -381,7 +381,7 @@ function PostEditor({ categories, error, form, onClose, onSubmit, saving, setFor
     setUploading(true);
     try { const uploaded = await uploadImage(file); setField('featured_image', uploaded.path); }
     catch (uploadError) { window.alert(uploadError.message); }
-    finally { setUploading(false); }
+    finally { setUploading(false); event.target.value = ''; }
   }
   return (
     <div className="admin-modal-backdrop">
@@ -397,10 +397,23 @@ function PostEditor({ categories, error, form, onClose, onSubmit, saving, setFor
           <label>Status<select value={form.status} onChange={(event) => setField('status', event.target.value)}><option value="draft">Draft</option><option value="published">Published</option></select></label>
           <label className="full-field">Excerpt<textarea value={form.excerpt} onChange={(event) => setField('excerpt', event.target.value)} placeholder="A short summary shown on the blog page" /></label>
           <label className="full-field">Content<textarea className="post-content-input" required value={form.content} onChange={(event) => setField('content', event.target.value)} placeholder="Write the article content..." /></label>
-          <label className="full-field">Featured image<input accept="image/jpeg,image/png,image/gif,image/webp" disabled={uploading} onChange={selectImage} type="file" />{uploading && <small>Uploading image...</small>}{form.featured_image && <img className="post-image-preview" src={form.featured_image} alt="Post preview" />}</label>
+          <fieldset className="post-image-field full-field">
+            <legend>Featured image <span>Optional</span></legend>
+            {form.featured_image && (
+              <div className="post-image-preview-wrap">
+                <img className="post-image-preview" src={form.featured_image} alt="Post preview" />
+                <button aria-label="Remove featured image" className="modal-icon-delete" disabled={uploading || saving} onClick={() => setField('featured_image', '')} title="Remove image" type="button"><ActionIcon name="delete" size={17} /></button>
+              </div>
+            )}
+            <label className="modal-upload-control">
+              <input accept="image/jpeg,image/png,image/gif,image/webp" disabled={uploading || saving} onChange={selectImage} type="file" />
+              <span className="secondary-button"><ButtonLoader loading={uploading} loadingText="Uploading image...">{form.featured_image ? 'Replace image' : 'Upload featured image'}</ButtonLoader></span>
+            </label>
+            <small>JPEG, PNG, GIF, or WebP. Maximum size 5 MB.</small>
+          </fieldset>
           <label className="post-featured-toggle"><input checked={form.featured} onChange={(event) => setField('featured', event.target.checked)} type="checkbox" /> Feature this post</label>
         </div>
-        <div className="question-editor-actions"><button className="secondary-button" disabled={saving} onClick={onClose} type="button">Cancel</button><button aria-busy={saving} disabled={saving} type="submit"><ButtonLoader loading={saving} loadingText="Saving...">{form.status === 'published' ? 'Publish Post' : 'Save Draft'}</ButtonLoader></button></div>
+        <div className="question-editor-actions"><button className="secondary-button" disabled={saving} onClick={onClose} type="button">Cancel</button><button className="modal-primary-button" aria-busy={saving} disabled={saving} type="submit"><ButtonLoader loading={saving} loadingText="Saving...">{form.status === 'published' ? 'Publish Post' : 'Save Draft'}</ButtonLoader></button></div>
       </form>
     </div>
   );

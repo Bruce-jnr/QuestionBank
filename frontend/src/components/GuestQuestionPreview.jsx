@@ -224,6 +224,14 @@ export default function GuestQuestionPreview() {
           <div className="guest-progress-track"><span style={{ width: `${((index + 1) / questions.length) * 100}%` }} /></div>
           <span className="category-label">{clientNeedLabels[currentQuestion.clientNeed]}</span>
           {currentQuestion.stem && <p className="guest-question-stem">{currentQuestion.stem}</p>}
+          {currentQuestion.content?.image?.url && (
+            <figure className="question-clinical-image">
+              <a href={currentQuestion.content.image.url} rel="noreferrer" target="_blank" title="Open full-size image">
+                <img alt={currentQuestion.content.image.alt || ''} src={currentQuestion.content.image.url} />
+              </a>
+              {currentQuestion.content.image.caption && <figcaption>{currentQuestion.content.image.caption}</figcaption>}
+            </figure>
+          )}
           <h3>{currentQuestion.prompt}</h3>
 
           {groupedTypes.includes(currentQuestion.questionType) && (

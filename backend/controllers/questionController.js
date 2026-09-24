@@ -1,5 +1,6 @@
 const { z } = require('zod');
 const prisma = require('../src/config/database');
+const { questionWithMedia } = require('../utils/questionMedia');
 
 const clientNeeds = [
   'MANAGEMENT_OF_CARE',
@@ -118,7 +119,7 @@ async function listQuestions(req, res) {
       prisma.question.count({ where }),
     ]);
     return res.json({
-      questions,
+      questions: questions.map(questionWithMedia),
       pagination: {
         page,
         limit,
@@ -140,7 +141,7 @@ async function createQuestion(req, res) {
     const question = await prisma.question.create({
       data: questionData(result.data, req.user.userId),
     });
-    return res.status(201).json({ question });
+    return res.status(201).json({ question: questionWithMedia(question) });
   } catch (error) {
     if (error.code === 'P2002') return res.status(409).json({ error: 'Question ID already exists' });
     console.error('Create question error:', error);
@@ -157,7 +158,7 @@ async function updateQuestion(req, res) {
       where: { id: req.params.id },
       data: questionData(result.data),
     });
-    return res.json({ question });
+    return res.json({ question: questionWithMedia(question) });
   } catch (error) {
     if (error.code === 'P2025') return res.status(404).json({ error: 'Question not found' });
     if (error.code === 'P2002') return res.status(409).json({ error: 'Question ID already exists' });

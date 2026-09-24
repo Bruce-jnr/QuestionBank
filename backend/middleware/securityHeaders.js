@@ -1,4 +1,12 @@
 function securityHeaders(req, res, next) {
+  let mediaOrigin = '';
+  try {
+    mediaOrigin = process.env.AWS_MEDIA_BASE_URL
+      ? new URL(process.env.AWS_MEDIA_BASE_URL).origin
+      : '';
+  } catch {
+    mediaOrigin = '';
+  }
   res.setHeader('Content-Security-Policy', [
     "default-src 'self'",
     "base-uri 'self'",
@@ -8,7 +16,7 @@ function securityHeaders(req, res, next) {
     "script-src 'self'",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
-    "img-src 'self' data:",
+    `img-src 'self' data:${mediaOrigin ? ` ${mediaOrigin}` : ''}`,
     "connect-src 'self'",
   ].join('; '));
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');

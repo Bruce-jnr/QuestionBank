@@ -1,0 +1,23 @@
+name: Test VPS Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test-deployment:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Connect to VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            echo "Successfully connected to VPS!"
+            whoami
+            hostname
+            pwd

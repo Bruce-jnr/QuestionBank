@@ -104,6 +104,19 @@ export async function uploadImage(file) {
   return data.file
 }
 
+export async function uploadQuestionImage(file) {
+  const body = new FormData()
+  body.append('image', file)
+  const response = await fetch('/api/question-images', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || ''}` },
+    body,
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(data.error || 'Question image upload failed')
+  return data.image
+}
+
 export function getPost(slug) {
   return request(`/api/public/posts/slug/${encodeURIComponent(slug)}`)
 }

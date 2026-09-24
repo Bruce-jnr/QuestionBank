@@ -433,6 +433,14 @@ export default function StudySessionPage() {
             : 'Choose one answer'}
         </span>
         <p className="session-stem">{currentQuestion.stem}</p>
+        {currentQuestion.content?.image?.url && (
+          <figure className="question-clinical-image">
+            <a href={currentQuestion.content.image.url} rel="noreferrer" target="_blank" title="Open full-size image">
+              <img alt={currentQuestion.content.image.alt || ''} src={currentQuestion.content.image.url} />
+            </a>
+            {currentQuestion.content.image.caption && <figcaption>{currentQuestion.content.image.caption}</figcaption>}
+          </figure>
+        )}
         <h1>{currentQuestion.prompt}</h1>
         {currentQuestion.content?.exhibits?.length > 0 && <div className="ngn-exhibits">{currentQuestion.content.exhibits.map((exhibit) => <details key={exhibit.title}><summary>{exhibit.title}</summary><p>{exhibit.content}</p></details>)}</div>}
         {['CLOZE_DROP_DOWN', 'MATRIX_GRID'].includes(currentQuestion.questionType) ? <div className="ngn-grouped-options">{Object.entries(groupedOptions).map(([group, options]) => <label key={group}><span>{group}</span><select disabled={Boolean(feedback) && session.mode === 'PRACTICE'} onChange={(event) => setSelected((values) => [...values.filter((id) => !options.some((option) => option.id === id)), event.target.value].filter(Boolean))} value={selected.find((id) => options.some((option) => option.id === id)) || ''}><option value="">Select...</option>{options.map((option) => <option key={option.id} value={option.id}>{option.text}</option>)}</select></label>)}</div> : null}

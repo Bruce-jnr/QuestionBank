@@ -6,6 +6,7 @@ import {
   createQuestion,
   getQuestions,
   importQuestions,
+  uploadQuestionImage,
   updateQuestion,
 } from '../services/api';
 
@@ -529,6 +530,8 @@ export default function QuestionBankPanel() {
 }
 
 function QuestionEditor({ editing, form, onClose, onSave, saving, setForm }) {
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState('');
   const setField = (field, value) => setForm({ ...form, [field]: value });
   function setOption(index, field, value) {
     setField(
@@ -537,6 +540,52 @@ function QuestionEditor({ editing, form, onClose, onSave, saving, setForm }) {
         optionIndex === index ? { ...option, [field]: value } : option,
       ),
     );
+  }
+
+  async function handleQuestionImage(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    setImageError('');
+    try {
+      const uploaded = await uploadQuestionImage(file);
+      setForm((current) => ({
+        ...current,
+        content: {
+          ...(current.content || {}),
+          image: {
+            key: uploaded.key,
+            url: uploaded.url,
+            alt: current.content?.image?.alt || '',
+            caption: current.content?.image?.caption || '',
+          },
+        },
+      }));
+    } catch (uploadError) {
+      setImageError(uploadError.message);
+    } finally {
+      setUploadingImage(false);
+      event.target.value = '';
+    }
+  }
+
+  function updateImage(field, value) {
+    setForm((current) => ({
+      ...current,
+      content: {
+        ...(current.content || {}),
+        image: { ...(current.content?.image || {}), [field]: value },
+      },
+    }));
+  }
+
+  function removeImage() {
+    setForm((current) => {
+      const content = { ...(current.content || {}) };
+      delete content.image;
+      return { ...current, content };
+    });
+    setImageError('');
   }
   return (
     <div className="admin-modal-backdrop">
@@ -586,6 +635,48 @@ function QuestionEditor({ editing, form, onClose, onSave, saving, setForm }) {
               onChange={(event) => setField('prompt', event.target.value)}
             />
           </label>
+          <fieldset className="question-image-field full-field">
+            <legend>Question image <span>Optional</span></legend>
+            {form.content?.image?.url ? (
+              <div className="question-image-editor-preview">
+                <img alt={form.content.image.alt || 'Question preview'} src={form.content.image.url} />
+                <div>
+                  <label>
+                    Alternative text
+                    <input
+                      onChange={(event) => updateImage('alt', event.target.value)}
+                      placeholder="Describe the clinical information shown"
+                      required
+                      value={form.content.image.alt || ''}
+                    />
+                  </label>
+                  <label>
+                    Caption
+                    <input
+                      onChange={(event) => updateImage('caption', event.target.value)}
+                      placeholder="Optional caption shown below the image"
+                      value={form.content.image.caption || ''}
+                    />
+                  </label>
+                  <button aria-label="Remove question image" className="modal-icon-delete question-image-remove" disabled={saving || uploadingImage} onClick={removeImage} title="Remove image" type="button">
+                    <ActionIcon name="delete" size={17} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p>Upload an ECG, clinical photograph, diagram, chart, or other image the student must analyse.</p>
+            )}
+            <label className="question-image-upload">
+              <input accept="image/jpeg,image/png,image/gif,image/webp" disabled={saving || uploadingImage} onChange={handleQuestionImage} type="file" />
+              <span className="secondary-button">
+                <ButtonLoader loading={uploadingImage} loadingText="Uploading to AWS...">
+                  {form.content?.image?.url ? 'Replace image' : 'Upload question image'}
+                </ButtonLoader>
+              </span>
+            </label>
+            <small>JPEG, PNG, GIF, or WebP. Maximum size 5 MB.</small>
+            {imageError && <p className="error-text">{imageError}</p>}
+          </fieldset>
           <label>
             Client need
             <select
@@ -699,6 +790,7 @@ function QuestionEditor({ editing, form, onClose, onSave, saving, setForm }) {
             </div>
           ))}
           <button
+            className="modal-inline-button"
             onClick={() =>
               setField('options', [
                 ...form.options,
@@ -744,7 +836,7 @@ function QuestionEditor({ editing, form, onClose, onSave, saving, setForm }) {
           >
             Cancel
           </button>
-          <button aria-busy={saving} disabled={saving} type="submit">
+          <button className="modal-primary-button" aria-busy={saving} disabled={saving} type="submit">
             <ButtonLoader loading={saving} loadingText="Saving...">
               {editing ? 'Save Changes' : 'Create Question'}
             </ButtonLoader>

@@ -1,6 +1,7 @@
 const { z } = require('zod');
 const prisma = require('../src/config/database');
 const { calculateScore } = require('../utils/scoringEngine');
+const { questionContentWithMedia } = require('../utils/questionMedia');
 
 const clientNeeds = [
   'MANAGEMENT_OF_CARE',
@@ -54,7 +55,7 @@ function exposedQuestion(question, revealAnswers = false) {
     stem: question.stem,
     prompt: question.prompt,
     options: question.options,
-    content: question.content,
+    content: questionContentWithMedia(question.content),
     clientNeed: question.client_need,
     questionType: question.question_type,
     ...(revealAnswers ? {

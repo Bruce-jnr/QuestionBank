@@ -1,6 +1,7 @@
 const express = require('express');
 const authRoutes = require('./auth');
 const { uploadFile } = require('../controllers/uploadController');
+const { uploadImage: uploadQuestionImage } = require('../controllers/questionImageController');
 const { authenticateToken } = require('../middleware/auth');
 const examRoutes = require('./exams');
 const questionRoutes = require('./questions');
@@ -15,6 +16,7 @@ function mountExpressRoutes(app) {
 
   app.use('/api/auth', json, authRoutes);
   app.post('/api/upload', authenticateToken, uploadFile);
+  app.post('/api/question-images', authenticateToken, uploadQuestionImage);
   app.use('/api/student/auth', json, studentAuthRoutes);
   app.use('/api/public/contact', json, contactRoutes);
   app.use('/api/public/question-preview', json, guestQuestionRoutes);
