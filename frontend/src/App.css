@@ -789,7 +789,9 @@ blockquote cite {
   color: #aebdcb;
   font-size: 0.88rem;
   text-decoration: none;
-  transition: color 160ms ease, transform 160ms ease;
+  transition:
+    color 160ms ease,
+    transform 160ms ease;
 }
 
 .footer-nav-column a:hover,
@@ -844,7 +846,9 @@ blockquote cite {
   font-size: 0.84rem;
   font-weight: 750;
   text-decoration: none;
-  transition: background 160ms ease, transform 160ms ease;
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
 }
 
 .footer-cta:hover {
@@ -2485,7 +2489,7 @@ body.offcanvas-open {
 .question-bank-copy h1 {
   max-width: 680px;
   margin: 14px 0 22px;
-  font-size: clamp(3rem, 6vw, 5.5rem);
+  font-size: 3.5rem;
   line-height: 1;
   letter-spacing: -0.06em;
 }
@@ -3995,7 +3999,9 @@ body.offcanvas-open {
   padding: 9px;
   border: 2px dashed #cbd5df;
   background: #fff;
-  transition: border-color 0.18s ease, background 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
 }
 
 .drag-order-zone.is-active {
