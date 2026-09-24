@@ -20,15 +20,45 @@ jobs:
           script: |
             set -e
 
-            cd /var/www/QuestionBank
+            echo "======================================"
+            echo "Starting QuestionBank deployment"
+            echo "======================================"
 
-            echo "Current commit:"
-            git rev-parse --short HEAD
+            cd /var/www/QuestionBank
 
             echo "Pulling latest code..."
             git pull origin main
 
-            echo "New commit:"
-            git rev-parse --short HEAD
+            echo "--------------------------------------"
+            echo "Installing backend dependencies"
+            echo "--------------------------------------"
 
-            echo "Code update successful!"
+            cd /var/www/QuestionBank/backend
+            npm install
+
+            echo "Generating Prisma client..."
+            npm run prisma:generate
+
+            echo "--------------------------------------"
+            echo "Building frontend"
+            echo "--------------------------------------"
+
+            cd /var/www/QuestionBank/frontend
+            npm install
+            npm run build
+
+            echo "--------------------------------------"
+            echo "Restarting backend"
+            echo "--------------------------------------"
+
+            pm2 restart QuestionBank
+
+            echo "--------------------------------------"
+            echo "Checking PM2 status"
+            echo "--------------------------------------"
+
+            pm2 status
+
+            echo "======================================"
+            echo "Deployment completed successfully!"
+            echo "======================================"
