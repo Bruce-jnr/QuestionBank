@@ -11,14 +11,34 @@ export default function Header() {
     localStorage.removeItem('theme');
   }, []);
 
+  useEffect(() => {
+    if (!open) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    document.body.classList.add('offcanvas-open');
+    return () => {
+      document.removeEventListener('keydown', closeOnEscape);
+      document.body.classList.remove('offcanvas-open');
+    };
+  }, [open]);
+
   return (
-    <header className="site-header">
+    <header className={`site-header ${open ? 'menu-open' : ''}`}>
       <div className="site-header-inner">
         <a className="brand" href="/">
           <LogoMark />
           <span>C-BRUCE NCLEX</span>
         </a>
-        <Navbar currentPath={currentPath} open={open} />
+        <Navbar currentPath={currentPath} onClose={() => setOpen(false)} open={open} />
+        <button
+          aria-label="Close navigation menu"
+          className={`public-nav-backdrop ${open ? 'is-visible' : ''}`}
+          onClick={() => setOpen(false)}
+          tabIndex={open ? 0 : -1}
+          type="button"
+        />
         <div className="header-actions">
           <a
             className={
@@ -31,6 +51,7 @@ export default function Header() {
             Question Bank
           </a>
           <button
+            aria-controls="primary-navigation"
             className="menu-button"
             onClick={() => setOpen(!open)}
             type="button"
