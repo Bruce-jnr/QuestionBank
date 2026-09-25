@@ -3816,6 +3816,91 @@ body.offcanvas-open {
   border-color: var(--primary);
 }
 
+/* Natural student learning workspace */
+.student-area { grid-template-columns: 264px minmax(0, 1fr); background: #f3f6f8; }
+.student-sidebar { padding: 26px 18px 20px; border-right: 0; color: #dce8f1; background: #10283b; }
+.student-brand { padding: 0 10px; color: #fff; }
+.student-brand .logo-mark { width: 36px; height: 36px; padding: 3px; border-radius: 9px; background: #fff; }
+.student-brand small { color: rgba(255, 255, 255, 0.58); }
+.student-sidebar nav { margin-top: 44px; gap: 6px; }
+.student-sidebar nav a { min-height: 45px; padding: 11px 12px; display: flex; align-items: center; gap: 12px; color: rgba(255, 255, 255, 0.67); transition: color 160ms ease, background 160ms ease, transform 160ms ease; }
+.student-sidebar nav a:hover { color: #fff; background: rgba(255, 255, 255, 0.07); transform: translateX(2px); }
+.student-sidebar nav .active { color: #fff; background: rgba(43, 140, 238, 0.25); box-shadow: inset 3px 0 0 #62b1ff; }
+.student-nav-icon { width: 19px; height: 19px; flex: 0 0 19px; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.student-signout { padding: 14px 12px; border-top-color: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.62); }
+.student-signout:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+
+.student-content { width: 100%; max-width: 1480px; margin-inline: auto; padding: 34px clamp(24px, 4vw, 56px) 70px; }
+.student-topbar { position: relative; min-height: 230px; margin-bottom: 24px; padding: clamp(28px, 4vw, 46px); overflow: hidden; align-items: center; border-radius: 20px; color: #fff; background: #10283b; box-shadow: 0 20px 45px rgba(18, 43, 62, 0.14); }
+.student-topbar::after { position: absolute; width: 290px; height: 290px; right: -105px; bottom: -175px; border: 42px solid rgba(255, 255, 255, 0.035); border-radius: 50%; content: ''; }
+.student-welcome-copy { position: relative; z-index: 1; max-width: 690px; }
+.student-topbar .student-today { display: block; color: #75bbff; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; }
+.student-topbar .student-welcome-label { margin-top: 18px; display: block; color: rgba(255, 255, 255, 0.66); font-size: 0.86rem; }
+.student-topbar h1 { max-width: 640px; margin: 5px 0 10px; color: #fff; font-size: clamp(2rem, 4vw, 3.15rem); line-height: 1.08; letter-spacing: -0.035em; }
+.student-topbar p { max-width: 600px; margin: 0; color: rgba(255, 255, 255, 0.67); line-height: 1.65; }
+.student-hero-summary { position: relative; z-index: 1; display: flex; align-items: center; gap: 24px; }
+.student-accuracy-ring { --student-progress: 0%; width: 116px; height: 116px; padding: 7px; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(#56aaff var(--student-progress), rgba(255, 255, 255, 0.12) 0); }
+.student-accuracy-ring > span { width: 100%; height: 100%; display: grid; place-content: center; border-radius: 50%; color: #fff; background: #10283b; text-align: center; }
+.student-accuracy-ring strong { font-size: 1.35rem; }
+.student-accuracy-ring small { color: rgba(255, 255, 255, 0.58); font-size: 0.68rem; }
+.student-hero-summary .student-account-summary { position: absolute; right: 0; bottom: -52px; white-space: nowrap; }
+.student-hero-summary .student-avatar { border: 2px solid rgba(255, 255, 255, 0.25); background: #2b8cee; }
+
+.student-dashboard-flow { display: grid; grid-template-columns: minmax(0, 1fr) 300px; grid-template-areas: 'continue continue' 'diagnostic diagnostic' 'study stats' 'history history' 'videos videos'; gap: 20px; align-items: start; }
+.student-dashboard-flow > .continue-session-banner { grid-area: continue; margin: 0; }
+.student-dashboard-flow > .diagnostic-summary-banner { grid-area: diagnostic; margin: 0; }
+.student-dashboard-flow > .study-builder { grid-area: study; }
+.student-dashboard-flow > .student-stats { grid-area: stats; }
+.student-dashboard-flow > .student-bottom-grid { grid-area: history; }
+.student-dashboard-flow > .student-video-library { grid-area: videos; }
+.continue-session-banner { padding: 20px 22px; border: 1px solid #bad8f3; border-radius: 14px; background: #eaf5ff; }
+.continue-session-banner a { box-shadow: 0 8px 18px rgba(43, 140, 238, 0.18); }
+.diagnostic-summary-banner { border-color: #dce4eb; border-radius: 14px; background: #fff; }
+
+.student-stats { margin: 0; display: grid; grid-template-columns: 1fr; gap: 12px; }
+.student-stats article,
+.study-builder,
+.student-bottom-grid article,
+.student-video-library { border-color: #e1e7ec; border-radius: 16px; box-shadow: 0 10px 30px rgba(28, 52, 72, 0.045); }
+.student-stats article { position: relative; min-height: 122px; padding: 20px; overflow: hidden; }
+.student-stats article::before { position: absolute; width: 4px; inset: 18px auto 18px 0; border-radius: 0 5px 5px 0; background: #65aff6; content: ''; }
+.student-stats strong { color: #142c3e; font-size: 1.65rem; }
+.student-stats span { font-size: 0.75rem; font-weight: 750; }
+.student-stats small { font-size: 0.72rem; }
+
+.study-builder { padding: clamp(24px, 3vw, 34px); }
+.study-builder-heading { align-items: flex-end; }
+.study-builder-heading h2 { margin: 7px 0 0; color: #172c3d; font-size: 1.65rem; }
+.session-builder-steps { opacity: 0.72; }
+.study-mode-grid { gap: 12px; }
+.study-mode-grid > button { padding: 20px; border-width: 1px; border-radius: 11px; }
+.study-mode-grid > button.selected { border-color: #75b6f4; box-shadow: inset 0 0 0 1px #75b6f4; }
+.session-options { padding-top: 22px; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid #e7ebef; }
+.session-options > button { min-height: 46px; }
+.availability-copy { align-self: center; }
+
+.student-bottom-grid { margin: 0; grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr); }
+.student-bottom-grid article { padding: 28px; }
+.student-bottom-grid h3 { margin-top: 0; color: #172c3d; font-size: 1.15rem; }
+.student-video-library { margin: 0; padding: 28px; }
+.video-library-empty { background: #f7fafc; }
+
+@media (max-width: 1120px) {
+  .student-dashboard-flow { grid-template-columns: 1fr; grid-template-areas: 'continue' 'diagnostic' 'study' 'stats' 'history' 'videos'; }
+  .student-stats { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 780px) {
+  .student-topbar { min-height: 0; padding: 28px 24px; align-items: flex-start; flex-direction: column; gap: 25px; }
+  .student-topbar h1 { font-size: clamp(2rem, 10vw, 2.65rem); }
+  .student-hero-summary { width: 100%; justify-content: space-between; }
+  .student-hero-summary .student-account-summary { position: static; }
+  .student-accuracy-ring { width: 98px; height: 98px; }
+  .student-stats { grid-template-columns: 1fr; }
+  .session-options { grid-template-columns: 1fr; }
+  .student-bottom-grid { grid-template-columns: 1fr; }
+}
+
 .empty-activity {
   margin-top: 24px;
   padding: 28px;

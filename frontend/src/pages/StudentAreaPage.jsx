@@ -53,6 +53,17 @@ function displayTopic(value) {
     .join(' ');
 }
 
+function StudentNavIcon({ name }) {
+  const paths = {
+    study: 'M4 19.5V5.8A2.8 2.8 0 0 1 6.8 3H20v16H6.8A2.8 2.8 0 0 0 4 21.8m0-2.3A2.8 2.8 0 0 1 6.8 17H20M8 7h8M8 11h6',
+    performance: 'M4 20V10m6 10V4m6 16v-7m4 7H2',
+    history: 'M12 7v5l3 2m6-2a9 9 0 1 1-3-6.7M21 3v6h-6',
+    videos: 'M4 5h12v14H4zM16 9l4-2v10l-4-2z',
+    guides: 'M5 4.5A3.5 3.5 0 0 1 8.5 8H12v13H8.5A3.5 3.5 0 0 0 5 17.5zm14 0A3.5 3.5 0 0 0 15.5 8H12v13h3.5a3.5 3.5 0 0 1 3.5-3.5z',
+  };
+  return <svg aria-hidden="true" className="student-nav-icon" fill="none" viewBox="0 0 24 24"><path d={paths[name]} /></svg>;
+}
+
 export default function StudentAreaPage() {
   const activeView =
     new URLSearchParams(window.location.search).get('view') || 'dashboard';
@@ -200,6 +211,11 @@ export default function StudentAreaPage() {
   const weakestCategory = [...(performance.categories || [])].sort(
     (a, b) => a.accuracy - b.accuracy,
   )[0];
+  const today = new Intl.DateTimeFormat('en', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  }).format(new Date());
 
   return (
     <div className="student-area">
@@ -229,24 +245,28 @@ export default function StudentAreaPage() {
               href="/student-area#study"
               onClick={() => setSidebarOpen(false)}
             >
+              <StudentNavIcon name="study" />
               Study
             </a>
             <a
               href="/student-area#performance"
               onClick={() => setSidebarOpen(false)}
             >
+              <StudentNavIcon name="performance" />
               Performance
             </a>
             <a
               href="/student-area#history"
               onClick={() => setSidebarOpen(false)}
             >
+              <StudentNavIcon name="history" />
               History
             </a>
             <a
               href="/student-area#videos"
               onClick={() => setSidebarOpen(false)}
             >
+              <StudentNavIcon name="videos" />
               Videos
             </a>
             <a
@@ -254,6 +274,7 @@ export default function StudentAreaPage() {
               href="/student-area?view=study-guides"
               onClick={() => setSidebarOpen(false)}
             >
+              <StudentNavIcon name="guides" />
               Study Guides
             </a>
           </nav>
@@ -288,29 +309,34 @@ export default function StudentAreaPage() {
           <strong>Student Area</strong>
         </div>
         <div className="student-topbar">
-          <div>
-            <span>
+          <div className="student-welcome-copy">
+            <span className="student-today">{today}</span>
+            <span className="student-welcome-label">
               Welcome back
               {student?.name ? `, ${student.name.split(' ')[0]}` : ''}
             </span>
-            <h1>Ready for your next session?</h1>
+            <h1>Let&apos;s make today&apos;s study count.</h1>
+            <p>{performance.questionsAnswered
+              ? `You have answered ${performance.questionsAnswered} questions so far. Keep the momentum going.`
+              : 'Start a focused practice session and build your confidence one question at a time.'}</p>
           </div>
-          <div className="student-account-summary">
-            <span
-              className={`student-plan-badge ${student?.accessTier === 'PREMIUM' ? 'premium' : 'free'}`}
-            >
-              {student?.accessTier === 'PREMIUM' && (
-                <ActionIcon name="diamond" size={13} />
-              )}
-              {student?.accessTier === 'PREMIUM' ? 'Premium' : 'Free'}
-            </span>
-            <div className="student-avatar">{initials}</div>
+          <div className="student-hero-summary">
+            <div className="student-accuracy-ring" style={{ '--student-progress': `${performance.accuracy || 0}%` }}>
+              <span><strong>{performance.questionsAnswered ? `${performance.accuracy}%` : '—'}</strong><small>Accuracy</small></span>
+            </div>
+            <div className="student-account-summary">
+              <span className={`student-plan-badge ${student?.accessTier === 'PREMIUM' ? 'premium' : 'free'}`}>
+                {student?.accessTier === 'PREMIUM' && <ActionIcon name="diamond" size={13} />}
+                {student?.accessTier === 'PREMIUM' ? 'Premium' : 'Free'}
+              </span>
+              <div className="student-avatar">{initials}</div>
+            </div>
           </div>
         </div>
         {showingStudyGuides ? (
           <StudyGuideContent embedded />
         ) : (
-          <>
+          <div className="student-dashboard-flow">
             {activeSession && (
               <section className="continue-session-banner">
                 <div>
@@ -606,7 +632,7 @@ export default function StudentAreaPage() {
                 </a>
               </article>
             </section>
-          </>
+          </div>
         )}
       </main>
     </div>
