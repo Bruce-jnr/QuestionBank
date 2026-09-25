@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import ButtonLoader from './ButtonLoader';
 import { DragDropAnswer } from '../pages/StudySessionPage';
+import MatrixAnswer from './MatrixAnswer';
 import {
   getGuestQuestionAvailability,
   startGuestQuestionPreview,
@@ -32,7 +33,7 @@ const questionTypeLabels = {
 };
 
 const multipleTypes = ['MULTIPLE_RESPONSE', 'EXTENDED_MULTIPLE_RESPONSE', 'HOT_SPOT'];
-const groupedTypes = ['CLOZE_DROP_DOWN', 'MATRIX_GRID'];
+const groupedTypes = ['CLOZE_DROP_DOWN'];
 
 export default function GuestQuestionPreview() {
   const [availability, setAvailability] = useState([]);
@@ -248,9 +249,13 @@ export default function GuestQuestionPreview() {
             </div>
           )}
 
+          {currentQuestion.questionType === 'MATRIX_GRID' && (
+            <MatrixAnswer disabled={Boolean(feedback)} onChange={setSelected} question={currentQuestion} selected={selected} />
+          )}
+
           {currentQuestion.questionType === 'DRAG_DROP' ? (
             <DragDropAnswer disabled={Boolean(feedback)} onChange={setSelected} options={currentQuestion.options} selected={selected} />
-          ) : !groupedTypes.includes(currentQuestion.questionType) && (
+          ) : ![...groupedTypes, 'MATRIX_GRID'].includes(currentQuestion.questionType) && (
             <div className="guest-answer-options">
               {currentQuestion.options.map((option) => (
                 <button className={selected.includes(option.id) ? 'selected' : ''} disabled={Boolean(feedback)} key={option.id} onClick={() => choose(option.id)} type="button">

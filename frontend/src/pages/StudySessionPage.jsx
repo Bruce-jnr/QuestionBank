@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import LogoMark from '../components/LogoMark';
 import ButtonLoader from '../components/ButtonLoader';
 import ActionIcon from '../components/ActionIcon';
+import MatrixAnswer from '../components/MatrixAnswer';
 import {
   finalizeExamSession,
   getExamSession,
@@ -443,7 +444,8 @@ export default function StudySessionPage() {
         )}
         <h1>{currentQuestion.prompt}</h1>
         {currentQuestion.content?.exhibits?.length > 0 && <div className="ngn-exhibits">{currentQuestion.content.exhibits.map((exhibit) => <details key={exhibit.title}><summary>{exhibit.title}</summary><p>{exhibit.content}</p></details>)}</div>}
-        {['CLOZE_DROP_DOWN', 'MATRIX_GRID'].includes(currentQuestion.questionType) ? <div className="ngn-grouped-options">{Object.entries(groupedOptions).map(([group, options]) => <label key={group}><span>{group}</span><select disabled={Boolean(feedback) && session.mode === 'PRACTICE'} onChange={(event) => setSelected((values) => [...values.filter((id) => !options.some((option) => option.id === id)), event.target.value].filter(Boolean))} value={selected.find((id) => options.some((option) => option.id === id)) || ''}><option value="">Select...</option>{options.map((option) => <option key={option.id} value={option.id}>{option.text}</option>)}</select></label>)}</div> : null}
+        {currentQuestion.questionType === 'CLOZE_DROP_DOWN' ? <div className="ngn-grouped-options">{Object.entries(groupedOptions).map(([group, options]) => <label key={group}><span>{group}</span><select disabled={Boolean(feedback) && session.mode === 'PRACTICE'} onChange={(event) => setSelected((values) => [...values.filter((id) => !options.some((option) => option.id === id)), event.target.value].filter(Boolean))} value={selected.find((id) => options.some((option) => option.id === id)) || ''}><option value="">Select...</option>{options.map((option) => <option key={option.id} value={option.id}>{option.text}</option>)}</select></label>)}</div> : null}
+        {currentQuestion.questionType === 'MATRIX_GRID' && <MatrixAnswer disabled={Boolean(feedback) && session.mode === 'PRACTICE'} onChange={setSelected} question={currentQuestion} selected={selected} />}
         {currentQuestion.questionType === 'DRAG_DROP' ? (
           <DragDropAnswer
             disabled={Boolean(feedback) && session.mode === 'PRACTICE'}

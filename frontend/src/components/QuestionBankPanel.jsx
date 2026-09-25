@@ -59,7 +59,7 @@ const emptyQuestion = {
 const emptyFilters = { status: '', accessTier: '', questionType: '', clientNeed: '' };
 
 function apiQuestion(question) {
-  return {
+  const result = {
     externalId: question.external_id || '',
     stem: question.stem,
     prompt: question.prompt,
@@ -73,6 +73,56 @@ function apiQuestion(question) {
     difficulty: question.difficulty,
     status: question.status,
     accessTier: question.access_tier || 'FREE',
+  };
+  return result.questionType === 'MATRIX_GRID' ? ensureMatrixForm(result) : result;
+}
+
+function defaultMatrix() {
+  return {
+    mode: 'SINGLE_RESPONSE',
+    rows: [{ id: 'row-1', label: '' }, { id: 'row-2', label: '' }],
+    columns: [{ id: 'column-1', label: '' }, { id: 'column-2', label: '' }],
+  };
+}
+
+function matrixOptions(matrix) {
+  return matrix.rows.flatMap((row) => matrix.columns.map((column) => ({
+    id: `${row.id}:${column.id}`,
+    text: column.label,
+    group: row.label,
+    rowId: row.id,
+    columnId: column.id,
+  })));
+}
+
+function ensureMatrixForm(form) {
+  if (form.content?.matrix?.rows?.length && form.content.matrix.columns?.length) return form;
+  if (form.options?.some((option) => option.group)) {
+    const rowLabels = [...new Set(form.options.map((option) => option.group).filter(Boolean))];
+    const columnLabels = [...new Set(form.options.map((option) => option.text).filter(Boolean))];
+    const matrix = {
+      mode: 'SINGLE_RESPONSE',
+      rows: rowLabels.map((label, index) => ({ id: `row-${index + 1}`, label })),
+      columns: columnLabels.map((label, index) => ({ id: `column-${index + 1}`, label })),
+    };
+    const correctAnswers = [];
+    matrix.rows.forEach((row) => matrix.columns.forEach((column) => {
+      const previous = form.options.find((option) => option.group === row.label && option.text === column.label);
+      if (previous && form.correctAnswers.includes(previous.id)) correctAnswers.push(`${row.id}:${column.id}`);
+    }));
+    return {
+      ...form,
+      content: { ...(form.content || {}), matrix },
+      options: matrixOptions(matrix),
+      correctAnswers,
+    };
+  }
+  const matrix = defaultMatrix();
+  return {
+    ...form,
+    content: { ...(form.content || {}), matrix },
+    options: matrixOptions(matrix),
+    correctAnswers: [],
   };
 }
 
@@ -259,6 +309,11 @@ export default function QuestionBankPanel() {
     setError('');
     setNotice('');
     try {
+      if (form.questionType === 'MATRIX_GRID') {
+        const unansweredRow = form.content.matrix.rows.find((row) =>
+          !form.correctAnswers.some((answer) => answer.startsWith(`${row.id}:`)));
+        if (unansweredRow) throw new Error(`Select at least one correct response for ${unansweredRow.label || 'every matrix row'}.`);
+      }
       const payload = {
         ...form,
         externalId: form.externalId || null,
@@ -529,6 +584,92 @@ export default function QuestionBankPanel() {
   );
 }
 
+function MatrixQuestionEditor({ form, setForm }) {
+  const matrix = form.content.matrix;
+
+  function commit(nextMatrix, nextAnswers = form.correctAnswers) {
+    const validIds = new Set(matrixOptions(nextMatrix).map((option) => option.id));
+    setForm({
+      ...form,
+      content: { ...form.content, matrix: nextMatrix },
+      options: matrixOptions(nextMatrix),
+      correctAnswers: nextAnswers.filter((id) => validIds.has(id)),
+    });
+  }
+
+  function updateItem(collection, index, label) {
+    commit({
+      ...matrix,
+      [collection]: matrix[collection].map((item, itemIndex) => itemIndex === index ? { ...item, label } : item),
+    });
+  }
+
+  function addItem(collection, prefix) {
+    const numbers = matrix[collection].map((item) => Number.parseInt(item.id.split('-').pop(), 10) || 0);
+    const id = `${prefix}-${Math.max(0, ...numbers) + 1}`;
+    commit({ ...matrix, [collection]: [...matrix[collection], { id, label: '' }] });
+  }
+
+  function removeItem(collection, id) {
+    if (matrix[collection].length <= 2) return;
+    commit({ ...matrix, [collection]: matrix[collection].filter((item) => item.id !== id) });
+  }
+
+  function toggleAnswer(row, column) {
+    const cellId = `${row.id}:${column.id}`;
+    if (matrix.mode === 'MULTIPLE_RESPONSE') {
+      commit(matrix, form.correctAnswers.includes(cellId)
+        ? form.correctAnswers.filter((id) => id !== cellId)
+        : [...form.correctAnswers, cellId]);
+      return;
+    }
+    const rowIds = matrix.columns.map((item) => `${row.id}:${item.id}`);
+    commit(matrix, [...form.correctAnswers.filter((id) => !rowIds.includes(id)), cellId]);
+  }
+
+  return (
+    <fieldset className="matrix-editor">
+      <legend>Matrix configuration</legend>
+      <label className="matrix-mode-field">
+        Response mode
+        <select value={matrix.mode} onChange={(event) => commit({ ...matrix, mode: event.target.value }, [])}>
+          <option value="SINGLE_RESPONSE">One response per row</option>
+          <option value="MULTIPLE_RESPONSE">Multiple responses per row</option>
+        </select>
+      </label>
+      <div className="matrix-editor-lists">
+        <section>
+          <h3>Rows</h3>
+          {matrix.rows.map((row, index) => (
+            <div key={row.id}>
+              <input aria-label={`Matrix row ${index + 1}`} onChange={(event) => updateItem('rows', index, event.target.value)} placeholder={`Clinical finding or action ${index + 1}`} required value={row.label} />
+              <button aria-label={`Delete row ${index + 1}`} className="modal-icon-delete" disabled={matrix.rows.length <= 2} onClick={() => removeItem('rows', row.id)} title="Delete row" type="button"><ActionIcon name="delete" size={16} /></button>
+            </div>
+          ))}
+          <button className="modal-inline-button" onClick={() => addItem('rows', 'row')} type="button">Add row</button>
+        </section>
+        <section>
+          <h3>Response columns</h3>
+          {matrix.columns.map((column, index) => (
+            <div key={column.id}>
+              <input aria-label={`Matrix column ${index + 1}`} onChange={(event) => updateItem('columns', index, event.target.value)} placeholder={`Response ${index + 1}`} required value={column.label} />
+              <button aria-label={`Delete column ${index + 1}`} className="modal-icon-delete" disabled={matrix.columns.length <= 2} onClick={() => removeItem('columns', column.id)} title="Delete column" type="button"><ActionIcon name="delete" size={16} /></button>
+            </div>
+          ))}
+          <button className="modal-inline-button" onClick={() => addItem('columns', 'column')} type="button">Add column</button>
+        </section>
+      </div>
+      <div className="matrix-key-scroll">
+        <table className="matrix-key-table">
+          <thead><tr><th>Correct answer key</th>{matrix.columns.map((column) => <th key={column.id}>{column.label || 'Response'}</th>)}</tr></thead>
+          <tbody>{matrix.rows.map((row) => <tr key={row.id}><th>{row.label || 'Row'}</th>{matrix.columns.map((column) => { const id = `${row.id}:${column.id}`; return <td key={column.id}><input aria-label={`${row.label || 'Row'}: ${column.label || 'Response'} is correct`} checked={form.correctAnswers.includes(id)} name={`matrix-key-${row.id}`} onChange={() => toggleAnswer(row, column)} type={matrix.mode === 'MULTIPLE_RESPONSE' ? 'checkbox' : 'radio'} /></td>; })}</tr>)}</tbody>
+        </table>
+      </div>
+      <small>Select the correct response or responses for every row.</small>
+    </fieldset>
+  );
+}
+
 function QuestionEditor({ editing, form, onClose, onSave, saving, setForm }) {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageError, setImageError] = useState('');
@@ -694,7 +835,12 @@ function QuestionEditor({ editing, form, onClose, onSave, saving, setForm }) {
             Question type
             <select
               value={form.questionType}
-              onChange={(event) => setField('questionType', event.target.value)}
+              onChange={(event) => {
+                const questionType = event.target.value;
+                setForm(questionType === 'MATRIX_GRID'
+                  ? ensureMatrixForm({ ...form, questionType })
+                  : { ...form, questionType });
+              }}
             >
               {questionTypes.map(([value, label]) => (
                 <option key={value} value={value}>
@@ -739,7 +885,9 @@ function QuestionEditor({ editing, form, onClose, onSave, saving, setForm }) {
             />
           </label>
         </div>
-        <fieldset className="question-options">
+        {form.questionType === 'MATRIX_GRID' ? (
+          <MatrixQuestionEditor form={ensureMatrixForm(form)} setForm={setForm} />
+        ) : <fieldset className="question-options">
           <legend>Answer options</legend>
           {form.options.map((option, index) => (
             <div key={index}>
@@ -757,9 +905,7 @@ function QuestionEditor({ editing, form, onClose, onSave, saving, setForm }) {
                 required
                 value={option.text}
               />
-              {['CLOZE_DROP_DOWN', 'MATRIX_GRID'].includes(
-                form.questionType,
-              ) && (
+              {form.questionType === 'CLOZE_DROP_DOWN' && (
                 <input
                   aria-label={`Option ${index + 1} response group`}
                   onChange={(event) =>
@@ -801,8 +947,8 @@ function QuestionEditor({ editing, form, onClose, onSave, saving, setForm }) {
           >
             Add option
           </button>
-        </fieldset>
-        <label>
+        </fieldset>}
+        {form.questionType !== 'MATRIX_GRID' && <label>
           Correct answer IDs
           <input
             required
@@ -818,7 +964,7 @@ function QuestionEditor({ editing, form, onClose, onSave, saving, setForm }) {
             }
             placeholder="a or a, c"
           />
-        </label>
+        </label>}
         <label>
           Rationale
           <textarea
